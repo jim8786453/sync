@@ -1,0 +1,127 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "activePlaceCount": {
+            "type": "integer"
+        },
+        "birth": {
+            "type": "object",
+            "properties": {
+                "place": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "placeName": {
+                            "type": "string"
+                        },
+                        "placeType": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "time": {
+                    "type": "object",
+                    "properties": {
+                        "startYear": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "birthYear": {
+            "type": "integer"
+        },
+        "date": {
+            "type": ["string", "null"]
+        },
+        "death": {
+            "type": "object",
+            "properties": {
+                "place": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "placeName": {
+                            "type": "string"
+                        },
+                        "placeType": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "time": {
+                    "type": "object",
+                    "properties": {
+                        "startYear": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "fc": {
+            "type": "string"
+        },
+        "gender": {
+            "type": ["string", "null"]
+        },
+        "id": {
+            "type": "integer"
+        },
+        "mda": {
+            "type": "string"
+        },
+        "movements": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "era": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "startLetter": {
+            "type": "string"
+        },
+        "totalWorks": {
+            "type": "integer"
+        },
+        "url": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "fc",
+        "id",
+        "mda",
+        "movements",
+        "totalWorks",
+        "url"
+    ]
+}

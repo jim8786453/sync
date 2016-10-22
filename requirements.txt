@@ -1,0 +1,6 @@
+jsonschema==2.5.1
+psycopg2==2.6.2
+six==1.10.0
+SQLAlchemy==1.0.15
+SQLAlchemy-Utils==0.32.9
+

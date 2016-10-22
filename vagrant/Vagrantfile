@@ -1,0 +1,52 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Ensure a minimum Vagrant version to prevent potential issues.
+Vagrant.require_version '>= 1.5.0'
+
+# Configure using Vagrant's version 2 API/syntax.
+Vagrant.configure(2) do |config|
+  # Ubuntu 14.04, 64 bit
+  config.vm.box         = 'ubuntu/trusty64'
+  config.vm.box_version = '~> 14.04'
+
+  # Providers
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 4096
+    v.cpus = 4
+  end
+
+  config.ssh.username = 'vagrant'
+  config.vm.network :public_network, bridge: 'en0: Wi-Fi (AirPort)'
+  config.vm.network :forwarded_port, guest: 5432, host: 5432
+  config.vm.synced_folder "../", "/home/vagrant/sync/"
+
+  # Provision Postgres and Emacs
+  config.vm.provision :shell do |sh|
+    sh.inline = <<-EOF
+      export DEBIAN_FRONTEND=noninteractive;
+
+      sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list';
+      wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add -;
+      apt-get update --assume-yes;
+
+      # Postgresql
+      apt-get -y install postgresql postgresql-contrib git;
+
+      # Emacs
+      apt-get -y install build-essential;
+      apt-get -y build-dep emacs24;
+      wget http://ftp.gnu.org/gnu/emacs/emacs-24.5.tar.gz;
+      tar -xf emacs-24.5.tar.* && cd emacs-24.5;
+      ./configure;
+      make;
+      sudo make install;
+
+      # emacs .init
+      cd /home/vagrant;
+      git clone https://github.com/jk74861372864/.emacs.d.git;
+      rm -rf emacs-24*;
+      sudo chown -R vagrant:vagrant /home/vagrant/.emacs.d;
+    EOF
+  end
+end
