@@ -1,6 +1,6 @@
 # Sync
 
-Helps manage the synchronisation of data (JSON documents) in a multi-master environment.
+Helps manage the synchronisation of data in a multi-master environment.
 
 ## Project state
 
@@ -12,5 +12,5 @@ This is an experimental project, not to be used in production situations.
 
 [![Documentation Status](https://readthedocs.org/projects/py-sync/badge/?version=latest)](http://py-sync.readthedocs.io/en/latest/?badge=latest)
 
-The [documentation](http://py-sync.readthedocs.io/en/latest/?) is generated using Sphinx. It's currently built and hosted on Read The Docs.
+The [documentation](http://py-sync.readthedocs.io/en/latest/?) is currently built and hosted on Read The Docs.
 
