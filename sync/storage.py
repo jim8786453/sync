@@ -7,7 +7,30 @@ from sqlalchemy_utils import database_exists, create_database, drop_database
 
 import sync
 
-from sync.constants import Text, Type
+from sync import settings
+from sync.constants import Text
+from sync.exceptions import DatabaseNotFoundError
+
+
+def init_storage(system_id, create_db=False):
+    if settings.STORAGE_CLASS == 'PostgresStorage':
+        args = {
+            'base_connection': settings.POSTGRES_CONNECTION
+        }
+        init_postgresql(args, system_id, create_db=create_db)
+    elif settings.STORAGE_CLASS == 'MockStorage':
+        init_mock(system_id, create_db)
+
+
+def init_postgresql(settings, system_id, create_db=False):
+    storage = PostgresStorage(system_id)
+    storage.connect(settings['base_connection'], create_db)
+    sync.init(storage)
+
+
+def init_mock(system_id, create_db=False):
+    storage = PostgresStorage(system_id)
+    sync.init(storage)
 
 
 class Storage(object):
@@ -15,7 +38,7 @@ class Storage(object):
     implementations.
 
     """
-    def connect(self, _=None):
+    def connect(self, _=None, __=None):
         """Setup a connection to the storage backend if needed."""
         raise NotImplementedError
 
@@ -41,11 +64,11 @@ class Storage(object):
         """
         raise NotImplementedError
 
-    def save_settings(self, settings):
-        """Save a settings object to the storage backend.
+    def save_system(self, system):
+        """Save a system object to the storage backend.
 
-        :param settings: Settings object to save
-        :type settings: sync.Settings
+        :param system: System object to save
+        :type system: sync.System
         """
         raise NotImplementedError
 
@@ -97,11 +120,11 @@ class Storage(object):
         """
         raise NotImplementedError
 
-    def get_settings(self):
-        """Fetch the current sync systems settings.
+    def get_system(self):
+        """Fetch the current sync systems system.
 
         :returns: Sync object
-        :rtype: sync.Settings
+        :rtype: sync.System
 
         """
         raise NotImplementedError
@@ -139,7 +162,8 @@ class Storage(object):
         raise NotImplementedError
 
     def get_message(self, message_id=None, destination_id=None,
-                    state=sync.State.Pending, with_for_update=False):
+                    state=sync.constants.State.Pending,
+                    with_for_update=False):
         """Fetch a message object based on the keyword args.
 
         :param message_id: The id of the message.
@@ -205,14 +229,14 @@ class Storage(object):
 
 class MockStorage(Storage):
 
-    def __init__(self, settings_id):
+    def __init__(self, system_id):
         self.nodes = {}
         self.messages = {}
         self.errors = {}
         self.changes = {}
         self.records = {}
         self.remotes = {}
-        self.settings_id = settings_id
+        self.system_id = system_id
 
     def _save(self, obj, dict_):
         if obj.id is None:
@@ -220,7 +244,7 @@ class MockStorage(Storage):
 
         dict_[obj.id] = copy.deepcopy(obj)
 
-    def connect(self, _=None):
+    def connect(self, _=None, __=None):
         pass
 
     def drop(self):
@@ -235,10 +259,10 @@ class MockStorage(Storage):
     def rollback(self):
         pass
 
-    def save_settings(self, settings):
-        if settings.id is None:
-            settings.id = sync.generate_id()
-        self.settings = copy.deepcopy(settings)
+    def save_system(self, system):
+        if system.id is None:
+            system.id = self.system_id
+        self.system = copy.deepcopy(system)
 
     def save_node(self, node):
         self._save(node, self.nodes)
@@ -258,10 +282,10 @@ class MockStorage(Storage):
     def save_remote(self, remote):
         self._save(remote, self.remotes)
 
-    def get_settings(self):
-        if not hasattr(self, 'settings'):
+    def get_system(self):
+        if not hasattr(self, 'system'):
             return None
-        return self.settings
+        return self.system
 
     def get_node(self, node_id):
         return self.nodes.get(node_id, None)
@@ -284,7 +308,7 @@ class MockStorage(Storage):
         return None
 
     def get_message(self, message_id=None, destination_id=None,
-                    state=sync.State.Pending, with_for_update=False):
+                    state=sync.constants.State.Pending, with_for_update=False):
         if message_id is not None:
             return self.messages.get(message_id, None)
 
@@ -322,7 +346,7 @@ class MockStorage(Storage):
 
     def update_messages(self, node_id, record_id, remote_id):
         for message in self.messages.values():
-            if message.state == sync.State.Pending \
+            if message.state == sync.constants.State.Pending \
                and message.destination_id == node_id \
                and message.record_id == record_id:
                 message.remote_id = remote_id
@@ -334,14 +358,15 @@ class PostgresStorage(Storage):
         self.id = sync_id
         self.base_url = None
         self.engine = None
-        self.session = None
-        self.trans = None
+        self.connection = None
+        self.trans = []
 
     def _get_one(self, query, class_, with_for_update=False):
         if with_for_update:
             query = query.with_for_update()
-        record = self.session.execute(query)
-        record = record.fetchone()
+
+        results = self.connection.execute(query)
+        record = results.fetchone()
 
         if record is None:
             return None
@@ -353,7 +378,7 @@ class PostgresStorage(Storage):
         return obj
 
     def _get_many(self, query, class_):
-        rows = self.session.execute(query)
+        rows = self.connection.execute(query)
         rows = rows.fetchall()
 
         if rows is None:
@@ -368,7 +393,7 @@ class PostgresStorage(Storage):
 
         return results
 
-    def _save(self, table, obj):
+    def _save(self, table, obj, override_id=False):
         values = obj.as_dict(False)
         keep = {}
         for key in values.keys():
@@ -377,7 +402,7 @@ class PostgresStorage(Storage):
         values = keep
 
         if not hasattr(obj, 'id') or obj.id is None:
-            obj.id = sync.generate_id()
+            obj.id = override_id or sync.generate_id()
             values['id'] = obj.id
             op = sqla.insert(table)
             op = op.values(values)
@@ -386,20 +411,15 @@ class PostgresStorage(Storage):
             op = op.values(values)
             op = op.where(table.c.id == obj.id)
 
-        self.session.execute(op)
+        self.connection.execute(op)
 
     def _connect(self):
-        self.session = self.engine.connect()
+        self.connection = self.engine.connect()
         self.metadata = sqla.MetaData(bind=self.engine)
 
-    def _create_and_connect(self):
-        create_database(self.engine.url)
-
-        self.session = self.engine.connect()
-        self.metadata = sqla.MetaData(self.session)
-
-        sqla.Table(
-            "settings", self.metadata,
+    def _setup_schema(self, create_db=False):
+        self.system_table = sqla.Table(
+            "systems", self.metadata,
             sqla.Column(
                 "id",
                 postgresql.UUID,
@@ -418,7 +438,7 @@ class PostgresStorage(Storage):
                 postgresql.JSON,
                 nullable=False))
 
-        sqla.Table(
+        self.node_table = sqla.Table(
             "nodes", self.metadata,
             sqla.Column(
                 "id",
@@ -449,7 +469,7 @@ class PostgresStorage(Storage):
                 default=True,
                 nullable=False))
 
-        sqla.Table(
+        self.message_table = sqla.Table(
             "messages", self.metadata,
             sqla.Column(
                 "id",
@@ -495,7 +515,7 @@ class PostgresStorage(Storage):
                 sqla.types.String,
                 nullable=False))
 
-        sqla.Table(
+        self.error_table = sqla.Table(
             "errors", self.metadata,
             sqla.Column(
                 "id",
@@ -515,7 +535,7 @@ class PostgresStorage(Storage):
                 sqla.Text,
                 nullable=True))
 
-        sqla.Table(
+        self.change_table = sqla.Table(
             "changes", self.metadata,
             sqla.Column(
                 "id",
@@ -539,7 +559,7 @@ class PostgresStorage(Storage):
                 sqla.Text,
                 nullable=True))
 
-        sqla.Table(
+        self.record_table = sqla.Table(
             "records", self.metadata,
             sqla.Column(
                 "id",
@@ -559,7 +579,7 @@ class PostgresStorage(Storage):
                 postgresql.JSON,
                 nullable=True))
 
-        sqla.Table(
+        self.remote_table = sqla.Table(
             "remotes", self.metadata,
             sqla.Column(
                 "id",
@@ -580,39 +600,39 @@ class PostgresStorage(Storage):
                 sqla.ForeignKey("records.id"),
                 nullable=True))
 
-        self.metadata.create_all()
+        if create_db:
+            self.metadata.create_all()
 
-    def connect(self, base_url):
+    def connect(self, base_url, create_db=False):
         self.base_url = base_url
         self.engine = sqla.create_engine(self.base_url + self.id)
 
-        if not database_exists(self.engine.url):
-            self._create_and_connect()
-        else:
-            self._connect()
+        if not database_exists(self.engine.url) and not create_db:
+            raise DatabaseNotFoundError()
 
-        for key, value in Type.__dict__.items():
-            if not key.startswith('__'):
-                table_name = key.lower()
-                if not table_name.endswith('s'):
-                    table_name += 's'
-                table = sqla.Table(table_name, self.metadata, autoload=True)
-                setattr(self, key.lower() + '_table', table)
+        if not database_exists(self.engine.url):
+            create_database(self.engine.url)
+
+        self._connect()
+        self._setup_schema(create_db)
 
     def drop(self):
         drop_database(self.engine.url)
 
-    def start_transaction(self):
-        self.trans = self.session.begin()
+    def start_transaction(self, nested=False):
+        tran = self.connection.begin()
+        self.trans.append(tran)
 
     def commit(self):
-        self.trans.commit()
+        tran = self.trans.pop(-1)
+        tran.commit()
 
     def rollback(self):
-        self.trans.rollback()
+        tran = self.trans.pop(-1)
+        tran.rollback()
 
-    def save_settings(self, settings):
-        self._save(self.settings_table, settings)
+    def save_system(self, system):
+        self._save(self.system_table, system, self.id)
 
     def save_node(self, node):
         self._save(self.node_table, node)
@@ -632,10 +652,10 @@ class PostgresStorage(Storage):
     def save_remote(self, remote):
         self._save(self.remote_table, remote)
 
-    def get_settings(self):
-        query = self.settings_table.select()
+    def get_system(self):
+        query = sqla.select([self.system_table])
 
-        return self._get_one(query, sync.Settings)
+        return self._get_one(query, sync.System)
 
     def get_node(self, node_id):
         table = self.node_table
@@ -645,7 +665,8 @@ class PostgresStorage(Storage):
         return self._get_one(query, sync.Node)
 
     def get_message(self, message_id=None, destination_id=None,
-                    state=sync.State.Pending, with_for_update=False):
+                    state=sync.constants.State.Pending,
+                    with_for_update=False):
         table = self.message_table
         query = table.select()
 
@@ -718,7 +739,7 @@ class PostgresStorage(Storage):
 
         # Query with stream_results set to True.
         result = (self
-                  .session.execution_options(stream_results=True)
+                  .connection.execution_options(stream_results=True)
                   .execute(query))
 
         while True:
@@ -771,4 +792,4 @@ class PostgresStorage(Storage):
         op = op.where(sqla.and_(
             table.c.destination_id == node_id,
             table.c.record_id == record_id))
-        self.session.execute(op)
+        self.connection.execute(op)

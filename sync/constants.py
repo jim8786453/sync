@@ -2,7 +2,7 @@
 
 class Type(object):
 
-    Settings = 'Settings'
+    System = 'System'
     Node = 'Node'
     Message = 'Message'
     Record = 'Record'
