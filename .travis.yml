@@ -9,5 +9,3 @@ install: pip install tox-travis
 script: tox
 addons:
   postgresql: "9.5"
-after_success:
-  - coveralls
