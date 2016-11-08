@@ -5,7 +5,7 @@ import six
 import uuid
 
 
-from sync import exceptions
+from sync import exceptions, async
 from sync.constants import Method, State, Text, Type
 
 
@@ -89,10 +89,15 @@ class Base(object):
         result = copy.deepcopy(self.__dict__)
         if not with_id:
             del result['id']
+
+        for key in list(result):
+            if key.startswith('_'):
+                del result[key]
+
         return result
 
 
-class Settings(Base):
+class System(Base):
     """Holds configuration and settings for the sync system. Only one
     instance of this class is ever in use.
 
@@ -113,17 +118,17 @@ class Settings(Base):
     def save(self):
         """Save the object using the global sync.Storage object."""
         s.start_transaction()
-        s.save_settings(self)
+        s.save_system(self)
         s.commit()
 
     @staticmethod
     def get():
         """Fetch the object using the global sync.Storage object."""
-        return s.get_settings()
+        return s.get_system()
 
     @staticmethod
     def init(name, schema, fetch_before_send=True):
-        """Upserts the systems settings.
+        """Upserts the system.
 
         :param name: Friendly name for the sync system.
         :type name: str
@@ -133,18 +138,18 @@ class Settings(Base):
         :param fetch_before_send: Determines whether nodes must fetch
             all pending messages before they may send a message.
         :type fetch_before_send: bool
-        :returns: Instantiated settings object.
-        :rtype: sync.Settings
+        :returns: Instantiated system object.
+        :rtype: sync.System
 
         """
-        settings = s.get_settings()
-        if settings is None:
-            settings = Settings()
-        settings.name = name
-        settings.schema = schema
-        settings.fetch_before_send = fetch_before_send
-        settings.save()
-        return settings
+        system = s.get_system()
+        if system is None:
+            system = System()
+        system.name = name
+        system.schema = schema
+        system.fetch_before_send = fetch_before_send
+        system.save()
+        return system
 
 
 class Node(Base):
@@ -240,6 +245,8 @@ class Node(Base):
 
         :param message_id: Id of the message to acknowledge.
         :type message_id: str
+
+
         :param remote_id: A node specific identifier to associate with a
             record.
         :type remote_id: str
@@ -272,34 +279,12 @@ class Node(Base):
     def sync(self):
         """Resend all records to the current node.
 
-        For example this can be used if a newly created node requires
-        a copy of all records in the system.
-
-        Warnings when using this method:
-
-            This method could take a very long time to complete as it
-            fetches and loops over all records in the system.
-
-            No attempt is made to recover from errors. This means that
-            the only option users have in the event of an error is to
-            try and run the method again which will result in
-            duplicate messages for the destination node to
-            process. This is obviously a bad implementation that could
-            be improved.
-
-        TODO(jim8786453@gmail.com): Use a 'task' based approach to
-        address both of the problems mentioned above.
-
         :returns: A message object
         :rtype: sync.Message
 
         """
-        for batch in Record.get_all():
-            for record in batch:
-                remote_id = record.remote(self.id)
-                Message.send(None, Method.Create, record.head, parent_id=None,
-                             destination_id=self.id, record_id=record.id,
-                             remote_id=remote_id)
+        args = (s.id, self.id)
+        async.run(async.node_sync, args)
 
     def check(self, method):
         """Verify the node has permission to use a method.
@@ -328,7 +313,7 @@ class Node(Base):
         self.save()
 
     @staticmethod
-    def get(node_id):
+    def get(node_id=None):
         """Fetch the object using the global sync.Storage object.
 
         :param node_id: The id of the node to fetch.
@@ -337,6 +322,8 @@ class Node(Base):
         :rtype: sync.Node
 
         """
+        if node_id is None:
+            return s.get_nodes()
         return s.get_node(node_id)
 
     @staticmethod
@@ -394,7 +381,7 @@ class Message(Base):
         self.state = State.Pending
 
         # Cache commonly required objects.
-        self._settings = None
+        self._system = None
         self._parent = None
         self._origin = None
         self._destination = None
@@ -422,7 +409,7 @@ class Message(Base):
 
     def _inflate(self):
         """Fetch objects related to this message."""
-        self._settings = s.get_settings()
+        self._system = s.get_system()
         self._parent = s.get_message(self.parent_id)
         self._origin = s.get_node(self.origin_id)
         self._destination = s.get_node(self.destination_id)
@@ -438,14 +425,8 @@ class Message(Base):
         permission.
 
         """
-        nodes = s.get_nodes()
-
-        for node in [n for n in nodes if n.id != self.origin_id and n.read]:
-            remote = Remote.get(node.id, record_id=self.record_id)
-            remote_id = remote.remote_id if remote else None
-
-            self.send(None, self.method, self.payload, self.id,
-                      node.id, self.record_id, remote_id)
+        args = (s.id, self)
+        async.run(async.message_propagate, args=args)
 
     def _validate(self):
         """Validate that the message is in a state that can be processed."""
@@ -465,7 +446,7 @@ class Message(Base):
         if self.method != Method.Create and self._record is None:
             raise exceptions.InvalidOperationError(Text.RecordNotFound)
 
-        if self._settings.fetch_before_send and self._origin and \
+        if self._system.fetch_before_send and self._origin and \
            s.get_message(destination_id=self.origin_id) is not None:
             raise exceptions.InvalidOperationError(Text.NodeHasPendingMessages)
 
@@ -626,10 +607,10 @@ class Message(Base):
             message._validate()
             message.save()
             s.commit()
-        except Exception as e:
+        except Exception:
             s.rollback()
 
-            raise e
+            raise
 
         if destination_id is not None:
             return message
@@ -644,13 +625,13 @@ class Message(Base):
             message._propagate()
             message.update(State.Acknowledged)
             s.commit()
-        except Exception as e:
+        except Exception:
             s.rollback()
             s.start_transaction()
             message.update(State.Failed)
             s.commit()
 
-            raise e
+            raise
 
         return message
 
@@ -669,8 +650,8 @@ class Message(Base):
         :rtype: sync.Message
 
         """
-        s.start_transaction()
         try:
+            s.start_transaction()
             message = s.get_message(destination_id=destination_id,
                                     with_for_update=True)
             if message is None:
@@ -678,10 +659,10 @@ class Message(Base):
             message.update(State.Processing)
             s.commit()
             return message
-        except Exception as e:
+        except Exception:
             s.rollback()
 
-            raise e
+            raise
 
 
 class Error(Base):
@@ -752,9 +733,9 @@ class Record(Base):
         if self.deleted and self.head is None:
             return True
 
-        settings = s.get_settings()
+        system = s.get_system()
         jsonschema.validators.Draft4Validator(
-            settings.schema).validate(self.head)
+            system.schema).validate(self.head)
 
         return True
 

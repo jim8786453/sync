@@ -55,7 +55,7 @@ def generate_postgresql_storage():
 
     """
     postgres_storage = storage.PostgresStorage(sync.generate_id())
-    postgres_storage.connect(postgresql.url())
+    postgres_storage.connect(postgresql.url(), create_db=True)
     return postgres_storage
 
 
@@ -73,7 +73,7 @@ class TestSync():
         self.storage = storage_fun()
 
         sync.init(self.storage)
-        sync.Settings.init('test', {}, True)
+        sync.System.init('test', {}, True)
 
         assert sync.s == self.storage
 
@@ -83,15 +83,15 @@ class TestSync():
 
     @pytest.fixture(autouse=False)
     def test_schema(self, request):
-        settings = sync.Settings.get()
-        settings.schema = test_schema()
-        settings.save()
+        system = sync.System.get()
+        system.schema = test_schema()
+        system.save()
         self.data = test_data()
 
-    def test_settings(self):
-        settings = sync.Settings.get()
-        settings.name = 'Mock'
-        settings.schema = {
+    def test_system(self):
+        system = sync.System.get()
+        system.name = 'Mock'
+        system.schema = {
             "type": "object",
             "properties": {
                 "name": {
@@ -99,16 +99,16 @@ class TestSync():
                 }
             }
         }
-        settings.save()
-        returned = sync.Settings.get()
-        assert settings.id is not None
-        assert settings == returned
+        system.save()
+        returned = sync.System.get()
+        assert system.id is not None
+        assert system == returned
 
-        settings.name = 'Update'
-        settings.save()
-        assert settings != returned
-        returned = sync.Settings.get()
-        assert settings == returned
+        system.name = 'Update'
+        system.save()
+        assert system != returned
+        returned = sync.System.get()
+        assert system == returned
 
     def test_node(self):
         node = sync.Node.create('Mock', create=True, read=True,
@@ -592,14 +592,14 @@ class TestSync():
         node_1 = sync.Node.create(create=True, read=True)
         node_2 = sync.Node.create(create=True, read=True)
         node_1.send(sync.Method.Create, {})
-        settings = sync.Settings.get()
-        settings.fetch_before_send = True
+        system = sync.System.get()
+        system.fetch_before_send = True
         message = sync.Message()
         message.method = sync.Method.Create
         message.payload = {}
         message.origin_id = node_2.id
         message._origin = node_2
-        message._settings = settings
+        message._system = system
         with pytest.raises(sync.exceptions.InvalidOperationError):
             message._validate()
 
@@ -611,7 +611,7 @@ class TestSync():
         message.payload = {}
         message.origin_id = node.id
         message._origin = node
-        message._settings = settings
+        message._system = system
         with pytest.raises(sync.exceptions.InvalidOperationError):
             message._validate()
 
@@ -710,9 +710,9 @@ class TestSync():
     def test_record_validate(self):
         record = sync.Record()
 
-        settings = sync.Settings.get()
-        settings.schema = {'type': 'string'}
-        settings.save()
+        system = sync.System.get()
+        system.schema = {'type': 'string'}
+        system.save()
 
         record.head = 'I am a string'
         assert record.validate()
@@ -781,9 +781,9 @@ class TestSync():
         assert n3.fetch() is None
 
     def test_sync_multi_write_multi_read(self):
-        settings = sync.Settings.get()
-        settings.fetch_before_send = False
-        settings.save()
+        system = sync.System.get()
+        system.fetch_before_send = False
+        system.save()
 
         n1 = sync.Node.create(create=True, read=True)
         n2 = sync.Node.create(create=True, read=True)
@@ -805,9 +805,9 @@ class TestSync():
             assert len(reads) == len(nodes)-1
 
     def test_schema_sync_two_nodes(self, test_schema):
-        settings = sync.Settings.get()
-        settings.fetch_before_send = False
-        settings.save()
+        system = sync.System.get()
+        system.fetch_before_send = False
+        system.save()
 
         n1 = sync.Node.create(create=True, read=True, update=True,
                               delete=True)
