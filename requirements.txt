@@ -1,4 +1,4 @@
-falcon==19.6.0
+falcon==1.0.0
 jsonschema==2.5.1
 psycopg2==2.6.2
 six==1.10.0
