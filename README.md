@@ -6,6 +6,8 @@ For example, a poor but commonly used method of synchronising data between two s
 
 [![Build Status](https://travis-ci.org/jim8786453/sync.svg?branch=master)](https://travis-ci.org/jim8786453/sync)
 
+[![Coverage Status](https://coveralls.io/repos/github/jim8786453/sync/badge.svg?branch=master)](https://coveralls.io/github/jim8786453/sync?branch=master)
+
 [![Documentation Status](https://readthedocs.org/projects/py-sync/badge/?version=latest)](http://py-sync.readthedocs.io/en/latest/?badge=latest)
 
 The [documentation](http://py-sync.readthedocs.io/en/latest/?) is currently built and hosted on Read The Docs.
