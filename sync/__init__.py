@@ -4,7 +4,6 @@ import jsonschema
 import six
 import uuid
 
-from multiprocessing import Pool
 
 from sync import exceptions, async
 from sync.constants import Method, State, Text, Type
@@ -285,8 +284,7 @@ class Node(Base):
 
         """
         args = (s.id, self.id)
-        p = Pool(1)
-        p.apply_async(async.node_sync, args=args)
+        async.run(async.node_sync, args)
 
     def check(self, method):
         """Verify the node has permission to use a method.
@@ -428,8 +426,7 @@ class Message(Base):
 
         """
         args = (s.id, self)
-        p = Pool(1)
-        p.apply_async(async.message_propagate, args=args)
+        async.run(async.message_propagate, args=args)
 
     def _validate(self):
         """Validate that the message is in a state that can be processed."""

@@ -1,16 +1,27 @@
+from multiprocessing import Process
+
 import sync
 
 from sync.storage import init_storage
 
 
+def run(fun, args):
+    p = Process(target=fun, args=args)
+    p.start()
+
+
+def _call_init_storage(system_id, create_db=False):
+    init_storage(system_id, create_db)
+
+
 def node_sync(system_id, node_id):
-    init_storage(system_id, create_db=False)
+    _call_init_storage(system_id)
 
     node = sync.Node.get(node_id)
     for batch in sync.Record.get_all():
         for record in batch:
             remote_id = record.remote(node.id)
-            sync.Message.send(None, sync.contants.Method.Create,
+            sync.Message.send(None, sync.constants.Method.Create,
                               record.head, parent_id=None,
                               destination_id=node.id,
                               record_id=record.id,
@@ -18,7 +29,7 @@ def node_sync(system_id, node_id):
 
 
 def message_propagate(system_id, message):
-    init_storage(system_id, create_db=False)
+    _call_init_storage(system_id)
 
     nodes = sync.Node.get()
 

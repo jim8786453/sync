@@ -23,7 +23,10 @@ def json_serial(obj):
     if isinstance(obj, datetime):
         serial = obj.isoformat()
         return serial
-    raise TypeError("Type not serializable")
+    elif isinstance(obj, sync.Node):
+        serial = obj.as_dict(with_id=True)
+        return serial
+    raise TypeError("Type not serializable: " + str(type(obj)))
 
 
 class PostData(object):
@@ -39,6 +42,8 @@ class System:
         system = inflate(json_data, sync.System(), schema.system_post)
         system.save()
         system = system.as_dict(with_id=True)
+        nodes = sync.Node.get()
+        system['nodes'] = nodes
         resp.body = json.dumps(system, default=json_serial)
         resp.status = falcon.HTTP_201
 
@@ -46,6 +51,8 @@ class System:
         system = sync.System.get().as_dict(with_id=True)
         jsonschema.validators.Draft4Validator(
             schema.system_get).validate(system)
+        nodes = sync.Node.get()
+        system['nodes'] = nodes
         resp.body = json.dumps(system, default=json_serial)
 
     def on_patch(self, req, resp):
@@ -56,6 +63,8 @@ class System:
         system = sync.System.get().as_dict(with_id=True)
         jsonschema.validators.Draft4Validator(
             schema.system_get).validate(system)
+        nodes = sync.Node.get()
+        system['nodes'] = nodes
         resp.body = json.dumps(system, default=json_serial)
 
 

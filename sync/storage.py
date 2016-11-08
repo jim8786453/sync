@@ -22,14 +22,14 @@ def init_storage(system_id, create_db=False):
         init_mock(system_id, create_db)
 
 
-def init_postgresql(settings, system_id, create_db=False):
+def init_mock(system_id, create_db=False):
     storage = PostgresStorage(system_id)
-    storage.connect(settings['base_connection'], create_db)
     sync.init(storage)
 
 
-def init_mock(system_id, create_db=False):
+def init_postgresql(settings, system_id, create_db=False):
     storage = PostgresStorage(system_id)
+    storage.connect(settings['base_connection'], create_db)
     sync.init(storage)
 
 
@@ -38,6 +38,7 @@ class Storage(object):
     implementations.
 
     """
+
     def connect(self, _=None, __=None):
         """Setup a connection to the storage backend if needed."""
         raise NotImplementedError
@@ -230,13 +231,14 @@ class Storage(object):
 class MockStorage(Storage):
 
     def __init__(self, system_id):
+        self.id = system_id
+
         self.nodes = {}
         self.messages = {}
         self.errors = {}
         self.changes = {}
         self.records = {}
         self.remotes = {}
-        self.system_id = system_id
 
     def _save(self, obj, dict_):
         if obj.id is None:
@@ -261,7 +263,7 @@ class MockStorage(Storage):
 
     def save_system(self, system):
         if system.id is None:
-            system.id = self.system_id
+            system.id = self.id
         self.system = copy.deepcopy(system)
 
     def save_node(self, node):
@@ -354,8 +356,8 @@ class MockStorage(Storage):
 
 class PostgresStorage(Storage):
 
-    def __init__(self, sync_id):
-        self.id = sync_id
+    def __init__(self, system_id):
+        self.id = system_id
         self.base_url = None
         self.engine = None
         self.connection = None
