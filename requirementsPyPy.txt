@@ -1,0 +1,6 @@
+falcon==1.1.0
+jsonschema==2.5.1
+psycopg2cffi==2.7.2
+six==1.10.0
+SQLAlchemy==1.0.15
+SQLAlchemy-Utils==0.32.9
