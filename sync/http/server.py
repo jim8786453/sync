@@ -1,4 +1,5 @@
 import falcon
+from jsonschema.exceptions import ValidationError
 
 import sync
 
@@ -11,6 +12,13 @@ _HEADER_X_SYNC_ID = 'X-Sync-Id'
 
 def raise_http_not_found(ex, req, resp, params):
     raise falcon.HTTPNotFound()
+
+
+def raise_http_invalid_request(ex, req, resp, params):
+    raise falcon.HTTPBadRequest((
+        'Payload failed validation',
+        ex.message
+    ))
 
 
 class SyncMiddleware(object):
@@ -31,6 +39,9 @@ class SyncMiddleware(object):
 
         init_storage(system_id, create_db=False)
 
+    def process_response(self, req, resp, resource, req_succeeded):
+        sync.close()
+
 
 api = falcon.API(middleware=[
     SyncMiddleware()])
@@ -47,3 +58,11 @@ api.add_route('/node/{node_id}/sync', controllers.NodeFail())
 api.add_error_handler(
     sync.exceptions.DatabaseNotFoundError,
     raise_http_not_found)
+
+api.add_error_handler(
+    sync.exceptions.InvalidIdError,
+    raise_http_not_found)
+
+api.add_error_handler(
+    ValidationError,
+    raise_http_invalid_request)

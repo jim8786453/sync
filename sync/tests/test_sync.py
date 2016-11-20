@@ -10,7 +10,7 @@ from operator import itemgetter
 import sync
 
 from sync import storage
-from conftest import postgresql
+from sync.conftest import postgresql
 
 
 def test_schema():

@@ -6,6 +6,14 @@ class SyncError(Exception):
     pass
 
 
+class DatabaseNotFoundError(SyncError):
+    pass
+
+
+class InvalidIdError(SyncError):
+    pass
+
+
 class InvalidOperationError(SyncError):
     pass
 
@@ -17,7 +25,3 @@ class NotFoundError(SyncError):
         self.id = id_
         text = Text.NotFound.format(self.type, self.id)
         super(SyncError, self).__init__(text)
-
-
-class DatabaseNotFoundError(SyncError):
-    pass

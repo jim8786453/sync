@@ -23,6 +23,10 @@ def init(storage):
     s = storage
 
 
+def close():
+    s.disconnect()
+
+
 def generate_id():
     """Generate a globally unique identifier.
 
@@ -32,6 +36,20 @@ def generate_id():
     """
     id_ = uuid.uuid4()
     return str(id_)
+
+
+def validate_id(id_string):
+
+    """Validate that a UUID string is in fact a valid uuid4.
+
+    :param uuid_string: A potential UUID
+    :type uuid_string: string
+    """
+    try:
+        val = uuid.UUID(id_string, version=4)
+    except ValueError:
+        return False
+    return str(val) == id_string
 
 
 def merge_patch(target, patch):
@@ -324,6 +342,8 @@ class Node(Base):
         """
         if node_id is None:
             return s.get_nodes()
+        if not validate_id(node_id):
+            raise exceptions.InvalidIdError()
         return s.get_node(node_id)
 
     @staticmethod
@@ -506,9 +526,7 @@ class Message(Base):
         assert self.state == State.Processing
 
         s.start_transaction()
-        self._inflate()
         self.update(State.Acknowledged)
-
         if self.destination_id is not None and remote_id is not None \
            and self.remote_id != remote_id:
             assert self.record_id is not None
@@ -534,13 +552,11 @@ class Message(Base):
 
         s.start_transaction()
         self.update(State.Failed)
-
         if reason:
             error = Error()
             error.message_id = self.id
             error.text = reason
             error.save()
-
         s.commit()
 
     def errors(self):
