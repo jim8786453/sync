@@ -5,7 +5,6 @@ language: python
 python:
   - "2.7"
   - "3.4"
-  - "pypy"
 install: pip install tox-travis
 script: tox
 addons:
