@@ -169,10 +169,25 @@ class TestHttp():
                                            headers=self.headers)
         assert result.status_code == 200
 
+        # POST 200 /node/{id}/send
+        url = '/node/{0}/send'.format(node_1_id)
+        body['remote_id'] = '2'
+        body_json = json.dumps(body)
+        result = self.client.simulate_post(url, body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 200
+
         # POST 200 /node/{id}/fetch
         url = '/node/{0}/fetch'.format(node_2_id)
         result = self.client.simulate_post(url, headers=self.headers)
         assert result.status_code == 200
+        message_1_id = result.json['id']
+
+        # POST 200 /node/{id}/fetch
+        url = '/node/{0}/fetch'.format(node_2_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 200
+        message_2_id = result.json['id']
 
         # POST 204 /node/{id}/fetch
         url = '/node/{0}/fetch'.format(node_2_id)
@@ -183,3 +198,25 @@ class TestHttp():
         url = '/node/foo/fetch'
         result = self.client.simulate_post(url, headers=self.headers)
         assert result.status_code == 404
+
+        # POST 200 /node/{id}/acknowledge
+        url = '/node/{0}/ack'.format(node_2_id)
+        body = {
+            'message_id': message_1_id,
+            'remote_id': "1"
+        }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post(url, body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 200
+
+        # POST 200 /node/{id}/fail
+        url = '/node/{0}/fail'.format(node_2_id)
+        body = {
+            'message_id': message_2_id,
+            'reason': 'This is a reason.'
+        }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post(url, body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 200
