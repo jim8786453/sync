@@ -212,17 +212,11 @@ system_patch = {
         "name": {
             "type": "string"
         },
-        "id": {
-            "type": "string"
-        },
         "fetch_before_send": {
             "type": "boolean"
         },
         "schema": json_schema
-    },
-    "required": [
-        "id"
-    ]
+    }
 }
 
 node_get = {

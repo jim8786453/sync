@@ -43,6 +43,10 @@ class Storage(object):
         """Setup a connection to the storage backend if needed."""
         raise NotImplementedError
 
+    def disconnect(self):
+        """Destroy the connection to the storage backend if needed."""
+        raise NotImplementedError
+
     def drop(self):
         """Delete all data for the current sync system."""
         raise NotImplementedError
@@ -247,6 +251,9 @@ class MockStorage(Storage):
         dict_[obj.id] = copy.deepcopy(obj)
 
     def connect(self, _=None, __=None):
+        pass
+
+    def disconnect(self):
         pass
 
     def drop(self):
@@ -618,10 +625,13 @@ class PostgresStorage(Storage):
         self._connect()
         self._setup_schema(create_db)
 
+    def disconnect(self):
+        self.connection.close()
+
     def drop(self):
         drop_database(self.engine.url)
 
-    def start_transaction(self, nested=False):
+    def start_transaction(self):
         tran = self.connection.begin()
         self.trans.append(tran)
 
@@ -728,7 +738,7 @@ class PostgresStorage(Storage):
         """Fetch all records using a generator.
 
         This is more complicated than usual for performance. It
-        streams batches of records (500) at a time.
+        streams batches of records (1000) at a time.
 
         :returns: Batches of records.
         :rtype: generator

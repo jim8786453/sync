@@ -9,13 +9,12 @@ from sync.http import schema
 
 
 def inflate(json_data, obj, schema):
+    if isinstance(json_data, (bytes, bytearray)):
+        json_data = json_data.decode("utf-8")
     data = json.loads(json_data)
-
     jsonschema.validators.Draft4Validator(schema).validate(data)
-
     for key in data.keys():
         setattr(obj, key, data[key])
-
     return obj
 
 
