@@ -25,3 +25,7 @@ class NotFoundError(SyncError):
         self.id = id_
         text = Text.NotFound.format(self.type, self.id)
         super(SyncError, self).__init__(text)
+
+
+class InvalidJsonError(SyncError):
+    pass

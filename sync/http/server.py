@@ -4,6 +4,7 @@ from jsonschema.exceptions import ValidationError
 import sync
 
 from sync.http import controllers
+from sync.exceptions import InvalidJsonError
 from sync.storage import init_storage
 
 
@@ -65,4 +66,8 @@ api.add_error_handler(
 
 api.add_error_handler(
     ValidationError,
+    raise_http_invalid_request)
+
+api.add_error_handler(
+    InvalidJsonError,
     raise_http_invalid_request)

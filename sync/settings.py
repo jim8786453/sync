@@ -17,9 +17,9 @@ connection string is required. As there is one sync system per
 database the database name will be appended to this value during
 initialisation.
 
-E.g. postgresql://user:pass@localhost:5432/
+E.g. postgresql://username:pass@localhost:5432/
 
 """
 POSTGRES_CONNECTION = os.environ.get('POSTGRES_CONNECTION', None)
 if POSTGRES_CONNECTION is None:
-    POSTGRES_CONNECTION = 'postgresql://sync:sync@localhost:5432/'
+    POSTGRES_CONNECTION = 'postgresql://username:pass@localhost:5432/'

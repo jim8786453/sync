@@ -5,13 +5,17 @@ import falcon
 
 import sync
 
+from sync.exceptions import InvalidJsonError
 from sync.http import schema
 
 
 def inflate(json_data, obj, schema):
     if isinstance(json_data, (bytes, bytearray)):
         json_data = json_data.decode("utf-8")
-    data = json.loads(json_data)
+    try:
+        data = json.loads(json_data)
+    except ValueError as ex:
+        raise InvalidJsonError(ex.message)
     jsonschema.validators.Draft4Validator(schema).validate(data)
     for key in data.keys():
         setattr(obj, key, data[key])
@@ -100,7 +104,11 @@ class NodeSend:
             raise falcon.HTTPNotFound()
         json_data = req.stream.read()
         data = inflate(json_data, PostData, schema.node_send_post)
-        message = node.send(data.method, data.payload)
+        method = data.method
+        payload = data.payload
+        record_id = getattr(data, 'record_id', None)
+        remote_id = getattr(data, 'remote_id', None)
+        message = node.send(method, payload, record_id, remote_id)
         message = message.as_dict(with_id=True)
         jsonschema.validators.Draft4Validator(
             schema.message_get).validate(message)

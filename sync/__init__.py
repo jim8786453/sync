@@ -24,7 +24,9 @@ def init(storage):
 
 
 def close():
-    s.disconnect()
+    global s
+    if s is not None:
+        s.disconnect()
 
 
 def generate_id():
@@ -425,6 +427,11 @@ class Message(Base):
         self._record.save()
 
         self.record_id = self._record.id
+
+        if self.remote_id is not None:
+            Remote.create(self.origin_id, self.record_id,
+                          self.remote_id)
+
         self.save()
 
     def _inflate(self):

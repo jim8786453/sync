@@ -51,6 +51,33 @@ class TestHttp():
         result = self.client.simulate_post('/', body=body_json)
         self.headers = {'X-Sync-Id': str(result.json['id'])}
 
+    def setup_nodes(self):
+        body = {
+            'name': 'node 1',
+            'create': True,
+            'read': True,
+            'update': True,
+            'delete': True
+        }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post('/node', body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 201
+        self.node_1 = result.json
+
+        body = {
+            'name': 'node 2',
+            'create': True,
+            'read': True,
+            'update': True,
+            'delete': True
+        }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post('/node', body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 201
+        self.node_2 = result.json
+
     def test_http_system(self, request):
         # POST 400 /
         body = {}
@@ -216,6 +243,33 @@ class TestHttp():
             'message_id': message_2_id,
             'reason': 'This is a reason.'
         }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post(url, body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 200
+
+    def test_http_node_with_remote_ids(self, request):
+        self.setup_headers()
+        self.setup_nodes()
+
+        # Create a record and attach a remote id.
+        node_1_id = self.node_1['id']
+        url = '/node/{0}/send'.format(node_1_id)
+        body = {
+            'method': 'create',
+            'payload': {
+                'firstName': 'test',
+                'lastName': 'test'
+            },
+            'remote_id': '0001'
+        }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post(url, body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 200
+
+        # Update the record using the remote id.
+        body['method'] = 'update'
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.headers)
