@@ -744,44 +744,54 @@ class PostgresStorage(Storage):
         :rtype: generator
 
         """
-        # Setup the basic select statement.
-        table = self.record_table
-        query = table.select()
-        query = query.where(table.c.deleted == False)  # noqa
+        connection = None
+        try:
+            # Create a second connection to Postgres so yield_per and
+            # committing transactions do not interfere with each
+            # other.
+            engine = sqla.create_engine(self.engine.url)
+            connection = engine.connect()
 
-        # Query with stream_results set to True.
-        result = (self
-                  .connection.execution_options(stream_results=True)
-                  .execute(query))
+            # Setup the basic select statement.
+            table = self.record_table
+            query = table.select()
+            query = query.where(table.c.deleted == False)  # noqa
 
-        while True:
-            # Use a dictionary so that the associated remote objects
-            # can easily be added into the appropriate
-            # 'record.remotes' object cache.
-            results = {}
+            # Query with stream_results set to True.
+            result = (connection.execution_options(stream_results=True)
+                      .execute(query))
 
-            # Fetch a batch of records.
-            chunk = result.fetchmany(1000)
-            if not chunk:
-                break
+            while True:
+                # Use a dictionary so that the associated remote objects
+                # can easily be added into the appropriate
+                # 'record.remotes' object cache.
+                results = {}
 
-            # Inflate the record objects.
-            for row in chunk:
-                obj = sync.Record()
-                for key in row.keys():
-                    setattr(obj, key, row[key])
-                results[obj.id] = obj
+                # Fetch a batch of records.
+                chunk = result.fetchmany(1000)
+                if not chunk:
+                    break
 
-            # Efficiently fetch the associated remote objects for
-            # this batch of records.
-            remotes = self.get_remotes(results.keys())
+                # Inflate the record objects.
+                for row in chunk:
+                    obj = sync.Record()
+                    for key in row.keys():
+                        setattr(obj, key, row[key])
+                    results[obj.id] = obj
 
-            # Add the remote objects to the associated record.remotes
-            # cache.
-            for remote in remotes:
-                results[remote.record_id].remotes.append(remote)
+                # Efficiently fetch the associated remote objects for
+                # this batch of records.
+                remotes = self.get_remotes(results.keys())
 
-            yield results.values()
+                # Add the remote objects to the associated record.remotes
+                # cache.
+                for remote in remotes:
+                    results[remote.record_id].remotes.append(remote)
+
+                yield results.values()
+        finally:
+            if connection is not None:
+                connection.close()
 
     def get_errors(self, message_id):
         table = self.error_table

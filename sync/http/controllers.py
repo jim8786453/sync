@@ -32,6 +32,11 @@ def json_serial(obj):
     raise TypeError("Type not serializable: " + str(type(obj)))
 
 
+def obj_or_404(obj):
+    if obj is None:
+        raise falcon.HTTPNotFound()
+
+
 class PostData(object):
     pass
 
@@ -88,8 +93,7 @@ class Node:
 
     def on_get(self, req, resp, node_id):
         node = sync.Node.get(node_id)
-        if node is None:
-            raise falcon.HTTPNotFound()
+        obj_or_404(node)
         node = node.as_dict(with_id=True)
         jsonschema.validators.Draft4Validator(
             schema.node_get).validate(node)
@@ -100,8 +104,7 @@ class NodeSend:
 
     def on_post(self, req, resp, node_id):
         node = sync.Node.get(node_id)
-        if node is None:
-            raise falcon.HTTPNotFound()
+        obj_or_404(node)
         json_data = req.stream.read()
         data = inflate(json_data, PostData, schema.node_send_post)
         method = data.method
@@ -119,8 +122,7 @@ class NodeFetch:
 
     def on_post(self, req, resp, node_id):
         node = sync.Node.get(node_id)
-        if node is None:
-            raise falcon.HTTPNotFound()
+        obj_or_404(node)
         message = node.fetch()
         if message is None:
             resp.status = falcon.HTTP_204
@@ -135,8 +137,7 @@ class NodeAck:
 
     def on_post(self, req, resp, node_id):
         node = sync.Node.get(node_id)
-        if node is None:
-            raise falcon.HTTPNotFound()
+        obj_or_404(node)
         json_data = req.stream.read()
         data = inflate(json_data, PostData, schema.node_ack_post)
         remote_id = getattr(data, 'remote_id', None)
@@ -151,8 +152,7 @@ class NodeFail:
 
     def on_post(self, req, resp, node_id):
         node = sync.Node.get(node_id)
-        if node is None:
-            raise falcon.HTTPNotFound()
+        obj_or_404(node)
         json_data = req.stream.read()
         data = inflate(json_data, PostData, schema.node_fail_post)
         reason = getattr(data, 'reason', None)
@@ -167,6 +167,5 @@ class NodeSync:
 
     def on_post(self, req, resp, node_id):
         node = sync.Node.get(node_id)
-        if node is None:
-            raise falcon.HTTPNotFound()
+        obj_or_404(node)
         node.sync()

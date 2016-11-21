@@ -25,7 +25,10 @@ def node_sync(system_id, node_id):
         node = sync.Node.get(node_id)
         for batch in sync.Record.get_all():
             for record in batch:
-                remote_id = record.remote(node.id)
+                remote = record.remote(node.id)
+                remote_id = None
+                if remote is not None:
+                    remote_id = getattr(remote, 'id', None)
                 sync.Message.send(None, sync.constants.Method.Create,
                                   record.head, parent_id=None,
                                   destination_id=node.id,

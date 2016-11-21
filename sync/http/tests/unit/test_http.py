@@ -226,7 +226,7 @@ class TestHttp():
         result = self.client.simulate_post(url, headers=self.headers)
         assert result.status_code == 404
 
-        # POST 200 /node/{id}/acknowledge
+        # POST 200 /node/{id}/ack
         url = '/node/{0}/ack'.format(node_2_id)
         body = {
             'message_id': message_1_id,
@@ -248,11 +248,31 @@ class TestHttp():
                                            headers=self.headers)
         assert result.status_code == 200
 
+        # POST 200 /node/{id}/sync
+        url = '/node/{0}/sync'.format(node_2_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 200
+
+        # POST 200 /node/{id}/fetch
+        url = '/node/{0}/fetch'.format(node_2_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 200
+
+        # POST 200 /node/{id}/fetch
+        url = '/node/{0}/fetch'.format(node_2_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 200
+
+        # POST 204 /node/{id}/fetch
+        url = '/node/{0}/fetch'.format(node_2_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 204
+
     def test_http_node_with_remote_ids(self, request):
         self.setup_headers()
         self.setup_nodes()
 
-        # Create a record and attach a remote id.
+        # Node 1: Create a record and attach a remote id.
         node_1_id = self.node_1['id']
         url = '/node/{0}/send'.format(node_1_id)
         body = {
@@ -268,9 +288,58 @@ class TestHttp():
                                            headers=self.headers)
         assert result.status_code == 200
 
-        # Update the record using the remote id.
+        # Node 1: Update the record using the remote id.
         body['method'] = 'update'
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.headers)
         assert result.status_code == 200
+
+        # Node 1: Ensure the node has no pending messages.
+        url = '/node/{0}/fetch'.format(node_1_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 204
+
+        # Node 2: Fetch message.
+        node_2_id = self.node_2['id']
+        url = '/node/{0}/fetch'.format(node_2_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 200
+
+        # Node 2. Acknowledge with remote_id
+        url = '/node/{0}/ack'.format(node_2_id)
+        body = {
+            'message_id': result.json['id'],
+            'remote_id': "abcd"
+        }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post(url, body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 200
+
+        # Node 2: Fetch message and check remote_id.
+        node_2_id = self.node_2['id']
+        url = '/node/{0}/fetch'.format(node_2_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 200
+        assert result.json['remote_id'] == 'abcd'
+
+        # Node 2. Update using the remote_id.
+        url = '/node/{0}/send'.format(node_2_id)
+        body = {
+            'method': 'update',
+            'payload': {
+                'firstName': 'changed',
+                'lastName': 'changed'
+            },
+            'remote_id': 'abcd'
+        }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post(url, body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 200
+
+    def test_http_inflate_invalid_json(self, request):
+        body_json = "{,"
+        result = self.client.simulate_post('/', body=body_json)
+        assert result.status_code == 400

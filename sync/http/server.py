@@ -54,7 +54,7 @@ api.add_route('/node/{node_id}/send', controllers.NodeSend())
 api.add_route('/node/{node_id}/fetch', controllers.NodeFetch())
 api.add_route('/node/{node_id}/ack', controllers.NodeAck())
 api.add_route('/node/{node_id}/fail', controllers.NodeFail())
-api.add_route('/node/{node_id}/sync', controllers.NodeFail())
+api.add_route('/node/{node_id}/sync', controllers.NodeSync())
 
 api.add_error_handler(
     sync.exceptions.DatabaseNotFoundError,
