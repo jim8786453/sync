@@ -339,6 +339,17 @@ class TestHttp():
                                            headers=self.headers)
         assert result.status_code == 200
 
+        # Node 2. Sync the record again.
+        url = '/node/{0}/sync'.format(node_2_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 200
+
+        # Node 2. Fetch the record and check the remote_id.
+        url = '/node/{0}/fetch'.format(node_2_id)
+        result = self.client.simulate_post(url, headers=self.headers)
+        assert result.status_code == 200
+        assert result.json['remote_id'] == 'abcd'
+
     def test_http_inflate_invalid_json(self, request):
         body_json = "{,"
         result = self.client.simulate_post('/', body=body_json)

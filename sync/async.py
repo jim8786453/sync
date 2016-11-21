@@ -28,7 +28,7 @@ def node_sync(system_id, node_id):
                 remote = record.remote(node.id)
                 remote_id = None
                 if remote is not None:
-                    remote_id = getattr(remote, 'id', None)
+                    remote_id = getattr(remote, 'remote_id', None)
                 sync.Message.send(None, sync.constants.Method.Create,
                                   record.head, parent_id=None,
                                   destination_id=node.id,
