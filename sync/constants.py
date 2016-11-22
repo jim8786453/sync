@@ -42,3 +42,5 @@ class Text(object):
     NotFound = '{0} object with id:{0} not found'
     RecordNotFound = 'Expected record not found'
     RemoteOrRecordRequired = 'Either a remote_id or record_id is required.'
+    RemoteInUse = 'remote_id already in use: {0}'
+    RecordExists = 'Create failed as record already exists'

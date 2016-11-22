@@ -15,7 +15,11 @@ def inflate(json_data, obj, schema):
     try:
         data = json.loads(json_data)
     except ValueError as ex:
-        raise InvalidJsonError(ex.message)
+        try:
+            # Fails in Python 3.
+            raise InvalidJsonError(ex.message)
+        except:
+            raise InvalidJsonError(ex)
     jsonschema.validators.Draft4Validator(schema).validate(data)
     for key in data.keys():
         setattr(obj, key, data[key])
@@ -98,6 +102,17 @@ class Node:
         jsonschema.validators.Draft4Validator(
             schema.node_get).validate(node)
         resp.body = json.dumps(node, default=json_serial)
+
+
+class NodeHasPending:
+
+    def on_get(self, req, resp, node_id):
+        node = sync.Node.get(node_id)
+        obj_or_404(node)
+        result = node.has_pending()
+        jsonschema.validators.Draft4Validator(
+            schema.node_has_pending_get).validate(result)
+        resp.body = json.dumps(result, default=json_serial)
 
 
 class NodeSend:

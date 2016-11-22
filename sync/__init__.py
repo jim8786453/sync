@@ -256,6 +256,18 @@ class Node(Base):
         """
         return Message.fetch(self.id)
 
+    def has_pending(self):
+        """Does the node have pending messages.
+
+        :returns: True if the node has pending messages.
+        :rtype: bool
+        """
+        message = s.get_message(destination_id=self.id)
+        if message is None:
+            return False
+        else:
+            return True
+
     def acknowledge(self, message_id, remote_id=None):
         """Acknowledge a message.
 
@@ -265,8 +277,6 @@ class Node(Base):
 
         :param message_id: Id of the message to acknowledge.
         :type message_id: str
-
-
         :param remote_id: A node specific identifier to associate with a
             record.
         :type remote_id: str
@@ -326,6 +336,9 @@ class Node(Base):
         return False
 
     def disable(self):
+        """Disable all permission for the node.
+
+        """
         self.create = False
         self.read = False
         self.update = False
@@ -472,6 +485,10 @@ class Message(Base):
 
         if self.method != Method.Create and self._record is None:
             raise exceptions.InvalidOperationError(Text.RecordNotFound)
+
+        if self.origin_id is not None and self.method == Method.Create \
+           and self._record is not None:
+            raise exceptions.InvalidOperationError(Text.RecordExists)
 
         if self._system.fetch_before_send and self._origin and \
            s.get_message(destination_id=self.origin_id) is not None:
@@ -850,6 +867,14 @@ class Remote(Base):
         :rtype: sync.Remote
 
         """
+        existing = s.get_remote(node_id, remote_id=remote_id)
+        if existing is not None:
+            # Reject if the remote_id is already in use.
+            if existing.record_id != record_id:
+                message = Text.RemoteInUse.format(remote_id)
+                raise exceptions.InvalidOperationError(message)
+            return existing
+
         remote = Remote()
         remote.node_id = node_id
         remote.record_id = record_id

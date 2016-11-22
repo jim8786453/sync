@@ -16,10 +16,14 @@ def raise_http_not_found(ex, req, resp, params):
 
 
 def raise_http_invalid_request(ex, req, resp, params):
+    message = ''
+    try:
+        message = ex.message
+    except:
+        message = str(ex)
     raise falcon.HTTPBadRequest((
         'Payload failed validation',
-        ex.message
-    ))
+        message))
 
 
 class SyncMiddleware(object):
@@ -50,6 +54,7 @@ api = falcon.API(middleware=[
 api.add_route('/', controllers.System())
 api.add_route('/node', controllers.NodeList())
 api.add_route('/node/{node_id}', controllers.Node())
+api.add_route('/node/{node_id}/pending', controllers.NodeHasPending())
 api.add_route('/node/{node_id}/send', controllers.NodeSend())
 api.add_route('/node/{node_id}/fetch', controllers.NodeFetch())
 api.add_route('/node/{node_id}/ack', controllers.NodeAck())
@@ -70,4 +75,8 @@ api.add_error_handler(
 
 api.add_error_handler(
     InvalidJsonError,
+    raise_http_invalid_request)
+
+api.add_error_handler(
+    sync.exceptions.InvalidOperationError,
     raise_http_invalid_request)

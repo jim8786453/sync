@@ -9,7 +9,7 @@ from operator import itemgetter
 
 import sync
 
-from sync import storage
+from sync import exceptions, storage
 from sync.conftest import postgresql
 
 
@@ -327,6 +327,17 @@ class TestSync():
         assert message.payload == payload
         assert message.record_id is not None
         assert message.state == sync.State.Acknowledged
+
+    def test_sync_node_has_pending(self):
+        n1 = sync.Node.create(create=True, read=True, update=True,
+                              delete=True)
+        n2 = sync.Node.create(create=True, read=True, update=True,
+                              delete=True)
+        assert n2.has_pending() is False
+        n1.send(sync.Method.Create, {'foo': 'bar'})
+        assert n2.has_pending() is True
+        n2.fetch()
+        assert n2.has_pending() is False
 
     def test_node_fetch_ack(self):
         sender = sync.Node.create(create=True)
@@ -857,3 +868,24 @@ class TestSync():
                                  for l in (self.data, n2_records)]
         pairs = zip(self.data, n2_records)
         assert not any(x != y for x, y in pairs)
+
+    def test_sync_duplicate_remote_id(self):
+        n1 = sync.Node.create(create=True, read=True, update=True,
+                              delete=True)
+        n2 = sync.Node.create(create=True, read=True, update=True,
+                              delete=True)
+
+        n1.send(sync.Method.Create, {'foo': 'bar'}, remote_id='abc')
+        message = n2.fetch()
+        n2.acknowledge(message.id, "foo")
+
+        n1.send(sync.Method.Create, {'foo': 'bar'}, remote_id='def')
+        message = n2.fetch()
+        with pytest.raises(exceptions.InvalidOperationError):
+            n2.acknowledge(message.id, "foo")
+
+        n2.send(sync.Method.Create, {'foo': 'bar'}, remote_id='123')
+
+        with pytest.raises(exceptions.InvalidOperationError):
+            n2.send(sync.Method.Create, {'foo': 'bar'}, remote_id='123')
+

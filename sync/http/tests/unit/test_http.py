@@ -350,7 +350,34 @@ class TestHttp():
         assert result.status_code == 200
         assert result.json['remote_id'] == 'abcd'
 
-    def test_http_inflate_invalid_json(self, request):
-        body_json = "{,"
-        result = self.client.simulate_post('/', body=body_json)
-        assert result.status_code == 400
+    def test_http_node_has_pending(self, request):
+        self.setup_headers()
+        self.setup_nodes()
+
+        # Node 2. Check if it has pending messages.
+        node_2_id = self.node_2['id']
+        url = '/node/{0}/pending'.format(node_2_id)
+        result = self.client.simulate_get(url, headers=self.headers)
+        assert result.json is False
+
+        # Node 1. Send a message.
+        node_1_id = self.node_1['id']
+        url = '/node/{0}/send'.format(node_1_id)
+        body = {
+            'method': 'create',
+            'payload': {
+                'firstName': 'test',
+                'lastName': 'test'
+            },
+            'remote_id': '0001'
+        }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post(url, body=body_json,
+                                           headers=self.headers)
+        assert result.status_code == 200
+
+        # Node 2. Check if it has pending messages.
+        node_2_id = self.node_2['id']
+        url = '/node/{0}/pending'.format(node_2_id)
+        result = self.client.simulate_get(url, headers=self.headers)
+        assert result.json is True
