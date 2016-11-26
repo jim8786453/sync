@@ -891,9 +891,9 @@ class TestSync():
             n2.send(sync.Method.Create, {'foo': 'bar'}, remote_id='123')
 
 
-class TestMockStorage():
+class TestBaseStorage():
 
-    def test_mock_storage(self):
+    def test_base_storage(self):
         storage = Storage()
 
         with pytest.raises(NotImplementedError):
@@ -909,17 +909,17 @@ class TestMockStorage():
         with pytest.raises(NotImplementedError):
             storage.rollback()
         with pytest.raises(NotImplementedError):
-            storage.save_system()
+            storage.save_system(None)
         with pytest.raises(NotImplementedError):
-            storage.save_node()
+            storage.save_node(None)
         with pytest.raises(NotImplementedError):
-            storage.save_message()
+            storage.save_message(None)
         with pytest.raises(NotImplementedError):
-            storage.save_error()
+            storage.save_error(None)
         with pytest.raises(NotImplementedError):
-            storage.save_change()
+            storage.save_change(None)
         with pytest.raises(NotImplementedError):
-            storage.save_remote()
+            storage.save_remote(None)
         with pytest.raises(NotImplementedError):
             storage.get_system()
         with pytest.raises(NotImplementedError):
@@ -939,4 +939,4 @@ class TestMockStorage():
         with pytest.raises(NotImplementedError):
             storage.get_changes(None)
         with pytest.raises(NotImplementedError):
-            storage.update_messages(None)
+            storage.update_messages(None, None, None)
