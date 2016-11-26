@@ -10,6 +10,9 @@ postgresql = testing.postgresql.Postgresql(
 
 @pytest.fixture(scope="session")
 def session_setup(request):
+    """Cleanup Postgres connections after tests have run.
+
+    """
     def fin():
         postgresql.stop()
 
@@ -17,21 +20,36 @@ def session_setup(request):
 
 
 def mock_run(fun, args):
+    """Apply args to a function.
+
+    """
     fun(*args)
 
 
 def mock_call_init_storage(system_id, create_db=False):
+    """Mock this functionality as unit tests do not run tasks in seperate
+    processes so results can more easily be verified.
+
+    """
     pass
 
 
 def mock_call_close():
+    """Mock this functionality as unit tests do not run tasks in seperate
+    processes so results can more easily be verified.
+
+    """
     pass
 
 
 @pytest.fixture(autouse=True)
 def no_async(monkeypatch):
-    monkeypatch.setattr(sync.async, 'run', mock_run)
-    monkeypatch.setattr(sync.async, '_call_init_storage',
+    """Mock this functionality as unit tests do not run tasks in seperate
+    processes so results can more easily be verified.
+
+    """
+    monkeypatch.setattr(sync.tasks, 'run', mock_run)
+    monkeypatch.setattr(sync.tasks, '_call_init_storage',
                         mock_call_init_storage)
-    monkeypatch.setattr(sync.async, '_call_close',
+    monkeypatch.setattr(sync.tasks, '_call_close',
                         mock_call_close)

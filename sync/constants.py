@@ -1,6 +1,9 @@
 
 
 class Type(object):
+    """Object types used in Sync's internals.
+
+    """
 
     System = 'System'
     Node = 'Node'
@@ -12,6 +15,9 @@ class Type(object):
 
 
 class Method(object):
+    """Operations that a message can perform.
+
+    """
 
     Create = 'create'
     Read = 'read'
@@ -22,6 +28,9 @@ class Method(object):
 
 
 class State(object):
+    """The states a message can be in.
+
+    """
 
     Pending = 'pending'
     Processing = 'processing'
@@ -30,6 +39,7 @@ class State(object):
 
 
 class Text(object):
+    """Various text used in error messages."""
 
     ChangeInvalid = 'Change object is not editable'
     ErrorInvalid = 'Error object is not editable'

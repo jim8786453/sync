@@ -11,6 +11,7 @@ import sync
 
 from sync import exceptions, storage
 from sync.conftest import postgresql
+from sync.storage import Storage
 
 
 def test_schema():
@@ -889,3 +890,53 @@ class TestSync():
         with pytest.raises(exceptions.InvalidOperationError):
             n2.send(sync.Method.Create, {'foo': 'bar'}, remote_id='123')
 
+
+class TestMockStorage():
+
+    def test_mock_storage(self):
+        storage = Storage()
+
+        with pytest.raises(NotImplementedError):
+            storage.connect()
+        with pytest.raises(NotImplementedError):
+            storage.disconnect()
+        with pytest.raises(NotImplementedError):
+            storage.drop()
+        with pytest.raises(NotImplementedError):
+            storage.start_transaction()
+        with pytest.raises(NotImplementedError):
+            storage.commit()
+        with pytest.raises(NotImplementedError):
+            storage.rollback()
+        with pytest.raises(NotImplementedError):
+            storage.save_system()
+        with pytest.raises(NotImplementedError):
+            storage.save_node()
+        with pytest.raises(NotImplementedError):
+            storage.save_message()
+        with pytest.raises(NotImplementedError):
+            storage.save_error()
+        with pytest.raises(NotImplementedError):
+            storage.save_change()
+        with pytest.raises(NotImplementedError):
+            storage.save_remote()
+        with pytest.raises(NotImplementedError):
+            storage.get_system()
+        with pytest.raises(NotImplementedError):
+            storage.get_node(None)
+        with pytest.raises(NotImplementedError):
+            storage.get_record(None)
+        with pytest.raises(NotImplementedError):
+            storage.get_remote(None)
+        with pytest.raises(NotImplementedError):
+            storage.get_message()
+        with pytest.raises(NotImplementedError):
+            storage.get_nodes()
+        with pytest.raises(NotImplementedError):
+            storage.get_records()
+        with pytest.raises(NotImplementedError):
+            storage.get_errors(None)
+        with pytest.raises(NotImplementedError):
+            storage.get_changes(None)
+        with pytest.raises(NotImplementedError):
+            storage.update_messages(None)

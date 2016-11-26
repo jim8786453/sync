@@ -5,20 +5,43 @@ import sync
 from sync.storage import init_storage
 
 
-def run(fun, args):
-    p = Process(target=fun, args=args)
-    p.start()
-
-
 def _call_init_storage(system_id, create_db=False):
+    """When running under unit tests a separate process is not used and
+    this is mocked.
+
+    """
     init_storage(system_id, create_db)
 
 
 def _call_close():
+    """When running under unit tests a separate process is not used and
+    this is mocked.
+
+    """
     sync.close()
 
 
+def run(fun, args):
+    """Run a function in a seperate process.
+
+    :param fun: The function to run.
+    :type fun: function
+    :param args: The arguements to apply to fun.
+    :type args: tuple
+
+    """
+    p = Process(target=fun, args=args)
+    p.start()
+
+
 def node_sync(system_id, node_id):
+    """Resend all records to a node.
+
+    :param system_id: Unique identifier of the system.
+    :type system_id: str
+    :param node_id: Unique identifier of the node.
+    :type node_id: str
+    """
     try:
         _call_init_storage(system_id)
 
@@ -39,6 +62,14 @@ def node_sync(system_id, node_id):
 
 
 def message_propagate(system_id, message):
+    """Propagate a message to all the other nodes in the system.
+
+    :param system_id: Unique identifier of the system.
+    :type system_id: str
+    :param message_id: Unique identifier of the message.
+    :type message_id: str
+
+    """
     try:
         _call_init_storage(system_id)
 

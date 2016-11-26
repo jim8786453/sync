@@ -233,6 +233,7 @@ class Storage(object):
 
 
 class MockStorage(Storage):
+    """Store data in-memory."""
 
     def __init__(self, system_id):
         self.id = system_id
@@ -362,6 +363,7 @@ class MockStorage(Storage):
 
 
 class PostgresStorage(Storage):
+    """Store data in a Postgres database using SqlAlchemy."""
 
     def __init__(self, system_id):
         self.id = system_id

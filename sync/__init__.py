@@ -5,7 +5,7 @@ import six
 import uuid
 
 
-from sync import exceptions, async
+from sync import exceptions, tasks
 from sync.constants import Method, State, Text, Type
 
 
@@ -24,9 +24,11 @@ def init(storage):
 
 
 def close():
+    """Close any connections the storage object may have opened."""
     global s
-    if s is not None:
-        s.disconnect()
+    if s is None:
+        return
+    s.disconnect()
 
 
 def generate_id():
@@ -41,7 +43,6 @@ def generate_id():
 
 
 def validate_id(id_string):
-
     """Validate that a UUID string is in fact a valid uuid4.
 
     :param uuid_string: A potential UUID
@@ -118,8 +119,8 @@ class Base(object):
 
 
 class System(Base):
-    """Holds configuration and settings for the sync system. Only one
-    instance of this class is ever in use.
+    """Holds the configuration and settings for the sync system. Only one
+    instance of this class is in use at any one time.
 
     """
 
@@ -173,7 +174,7 @@ class System(Base):
 
 
 class Node(Base):
-    """Nodes are external systems that want to sync data with other nodes.
+    """Nodes are external systems that want to sync data.
 
     """
 
@@ -314,7 +315,7 @@ class Node(Base):
 
         """
         args = (s.id, self.id)
-        async.run(async.node_sync, args)
+        tasks.run(tasks.node_sync, args)
 
     def check(self, method):
         """Verify the node has permission to use a method.
@@ -466,7 +467,7 @@ class Message(Base):
 
         """
         args = (s.id, self)
-        async.run(async.message_propagate, args=args)
+        tasks.run(tasks.message_propagate, args=args)
 
     def _validate(self):
         """Validate that the message is in a state that can be processed."""
