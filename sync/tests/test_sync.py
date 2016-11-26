@@ -919,6 +919,8 @@ class TestBaseStorage():
         with pytest.raises(NotImplementedError):
             storage.save_change(None)
         with pytest.raises(NotImplementedError):
+            storage.save_record(None)
+        with pytest.raises(NotImplementedError):
             storage.save_remote(None)
         with pytest.raises(NotImplementedError):
             storage.get_system()
