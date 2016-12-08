@@ -309,12 +309,12 @@ node_patch = {
     ]
 }
 
-node_has_pending_get = {
+message_pending_get = {
     "$schema": "http://json-schema.org/draft-04/schema#node_send",
     "type": "boolean"
 }
 
-node_send_post = {
+message_post = {
     "$schema": "http://json-schema.org/draft-04/schema#node_send",
     "type": "object",
     "properties": {
@@ -337,27 +337,14 @@ node_send_post = {
     ]
 }
 
-node_ack_post = {
+message_patch = {
     "$schema": "http://json-schema.org/draft-04/schema#node_ack",
     "type": "object",
     "properties": {
-        "message_id": {
-            "type": "string"
+        "success": {
+            "type": "boolean"
         },
         "remote_id": {
-            "type": "string"
-        },
-    },
-    "required": [
-        "message_id"
-    ]
-}
-
-node_fail_post = {
-    "$schema": "http://json-schema.org/draft-04/schema#node_fail",
-    "type": "object",
-    "properties": {
-        "message_id": {
             "type": "string"
         },
         "reason": {
@@ -365,7 +352,7 @@ node_fail_post = {
         },
     },
     "required": [
-        "message_id"
+        "success"
     ]
 }
 

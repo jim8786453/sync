@@ -1,82 +1,47 @@
 import falcon
-from jsonschema.exceptions import ValidationError
+import jsonschema
 
 import sync
 
-from sync.http import controllers
-from sync.exceptions import InvalidJsonError
-from sync.storage import init_storage
+from sync.http import admin, errors, middleware, messaging
 
-
-_HEADER_X_SYNC_ID = 'X-Sync-Id'
-
-
-def raise_http_not_found(ex, req, resp, params):
-    raise falcon.HTTPNotFound()
-
-
-def raise_http_invalid_request(ex, req, resp, params):
-    message = ''
-    try:
-        message = ex.message
-    except:
-        message = str(ex)
-    raise falcon.HTTPBadRequest((
-        'Payload failed validation',
-        message))
-
-
-class SyncMiddleware(object):
-
-    def process_request(self, req, resp):
-        system_id = req.get_header(_HEADER_X_SYNC_ID)
-
-        # The only method/path that doesn't require an X-Sync-Id
-        # header.
-        if req.method == 'POST' and req.path == '/':
-            if system_id is not None:
-                raise falcon.HTTPInvalidHeader(
-                    'Unexpected header present', _HEADER_X_SYNC_ID)
-            return
-
-        if system_id is None:
-            raise falcon.HTTPMissingHeader(_HEADER_X_SYNC_ID)
-
-        init_storage(system_id, create_db=False)
-
-    def process_response(self, req, resp, resource, req_succeeded):
-        sync.close()
-
-
+# Middleware.
 api = falcon.API(middleware=[
-    SyncMiddleware()])
+    middleware.Sync()])
 
-api.add_route('/', controllers.System())
-api.add_route('/node', controllers.NodeList())
-api.add_route('/node/{node_id}', controllers.Node())
-api.add_route('/node/{node_id}/pending', controllers.NodeHasPending())
-api.add_route('/node/{node_id}/send', controllers.NodeSend())
-api.add_route('/node/{node_id}/fetch', controllers.NodeFetch())
-api.add_route('/node/{node_id}/ack', controllers.NodeAck())
-api.add_route('/node/{node_id}/fail', controllers.NodeFail())
-api.add_route('/node/{node_id}/sync', controllers.NodeSync())
 
+# Admin API.
+api.add_route('/systems', admin.SystemList())
+api.add_route('/systems/{system_id}', admin.System())
+api.add_route('/systems/{system_id}/nodes', admin.NodeList())
+api.add_route('/systems/{system_id}/nodes/{node_id}', admin.Node())
+api.add_route('/systems/{system_id}/nodes/{node_id}/sync', admin.NodeSync())
+
+
+# Message API.
+api.add_route('/messages', messaging.MessageList())
+api.add_route('/messages/pending', messaging.MessagePending())
+api.add_route('/messages/next', messaging.MessageNext())
+api.add_route('/messages/{message_id}', messaging.Message())
+
+
+# Error handlers.
 api.add_error_handler(
     sync.exceptions.DatabaseNotFoundError,
-    raise_http_not_found)
+    errors.raise_http_not_found)
 
 api.add_error_handler(
     sync.exceptions.InvalidIdError,
-    raise_http_not_found)
+    errors.raise_http_not_found)
 
 api.add_error_handler(
-    ValidationError,
-    raise_http_invalid_request)
+    jsonschema.exceptions.ValidationError,
+    errors.raise_http_invalid_request)
 
 api.add_error_handler(
-    InvalidJsonError,
-    raise_http_invalid_request)
+    sync.exceptions.InvalidJsonError,
+    errors.raise_http_invalid_request)
 
 api.add_error_handler(
     sync.exceptions.InvalidOperationError,
-    raise_http_invalid_request)
+    errors.raise_http_invalid_request)
