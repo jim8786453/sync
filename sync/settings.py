@@ -23,3 +23,13 @@ E.g. postgresql://username:pass@localhost:5432/
 POSTGRES_CONNECTION = os.environ.get('POSTGRES_CONNECTION', None)
 if POSTGRES_CONNECTION is None:
     POSTGRES_CONNECTION = 'postgresql://username:pass@localhost:5432/'
+
+"""POSTGRES_CONNECTION: if using the MongoStorage backend a base
+connection string is required.
+
+E.g. mongodb://localhost:27017/
+
+"""
+MONGO_CONNECTION = os.environ.get('MONGO_CONNECTION', None)
+if MONGO_CONNECTION is None:
+    MONGO_CONNECTION = 'mongodb://localhost:27017/'

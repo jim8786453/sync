@@ -2,6 +2,7 @@ import copy
 
 import sqlalchemy as sqla
 
+from pymongo import MongoClient
 from sqlalchemy.dialects import postgresql
 from sqlalchemy_utils import database_exists, create_database, drop_database
 
@@ -20,15 +21,23 @@ def init_storage(system_id, create_db=False):
         init_postgresql(args, system_id, create_db=create_db)
     elif settings.STORAGE_CLASS == 'MockStorage':
         init_mock(system_id, create_db)
+    elif settings.STORAGE_CLASS == 'MongoStorage':
+        init_mongo(system_id, create_db)
 
 
 def init_mock(system_id, create_db=False):
     storage = PostgresStorage(system_id)
-    sync.init(storage)
+    sync.init(storage, create_db)
 
 
 def init_postgresql(settings, system_id, create_db=False):
     storage = PostgresStorage(system_id)
+    storage.connect(settings['base_connection'], create_db)
+    sync.init(storage)
+
+
+def init_mongo(settings, system_id, create_db=False):
+    storage = MongoStorage(system_id)
     storage.connect(settings['base_connection'], create_db)
     sync.init(storage)
 
@@ -817,3 +826,226 @@ class PostgresStorage(Storage):
             table.c.destination_id == node_id,
             table.c.record_id == record_id))
         self.connection.execute(op)
+
+
+class MongoStorage(Storage):
+    """Store data in a Mongo database."""
+
+    def __init__(self, system_id):
+        self.id = system_id
+        self.session = None
+
+    def _get_one(self, table, filter_, class_):
+        record = self.session[table].find_one(filter_)
+
+        if record is None:
+            return None
+
+        obj = class_()
+        for key in record.keys():
+            if not key == '_id':
+                setattr(obj, key, record[key])
+
+        return obj
+
+    def _get_many(self, table, filter_, class_):
+        rows = self.session[table].find(filter_)
+
+        if rows is None:
+            return []
+
+        results = []
+        for row in rows:
+            obj = class_()
+            for key in row.keys():
+                if not key == '_id':
+                    setattr(obj, key, row[key])
+            results.append(obj)
+
+        return results
+
+    def _save(self, table, obj, override_id=False):
+        values = obj.as_dict(False)
+        if not hasattr(obj, 'id') or obj.id is None:
+            obj.id = override_id or sync.generate_id()
+            values['id'] = obj.id
+            self.session[table].insert_one(values)
+        else:
+            filter_ = {
+                'id': obj.id
+            }
+            values = {
+                '$set': values
+            }
+            self.session[table].update_one(filter_, values)
+
+    def _database_exists(self):
+        names = self.client.database_names()
+        if self.id in names:
+            return True
+        else:
+            return False
+
+    def connect(self, base_url, create_db=False, client=None):
+        self.base_url = base_url
+        if client is None:
+            self.client = MongoClient(base_url)
+        else:
+            self.client = client
+
+        if not self._database_exists() and not create_db:
+            raise DatabaseNotFoundError()
+
+        self.session = self.client[self.id]
+
+    def disconnect(self):
+        pass
+
+    def drop(self):
+        pass
+
+    def start_transaction(self):
+        pass
+
+    def commit(self):
+        pass
+
+    def rollback(self):
+        pass
+
+    def save_system(self, system):
+        self._save('systems', system, self.id)
+
+    def save_node(self, node):
+        self._save('nodes', node)
+
+    def save_message(self, message):
+        self._save('messages', message)
+
+    def save_error(self, error):
+        self._save('errors', error)
+
+    def save_change(self, change):
+        self._save('changes', change)
+
+    def save_record(self, record):
+        self._save('records', record)
+
+    def save_remote(self, remote):
+        self._save('remotes', remote)
+
+    def get_system(self):
+        return self._get_one('systems', {}, sync.System)
+
+    def get_node(self, node_id):
+        filter_ = {
+            'id': node_id
+        }
+        return self._get_one('nodes', filter_, sync.Node)
+
+    def get_message(self, message_id=None, destination_id=None,
+                    state=sync.constants.State.Pending,
+                    with_for_update=False):
+        filter_ = {}
+
+        if message_id is not None:
+            filter_['id'] = message_id
+        elif destination_id is not None:
+            filter_['state'] = state
+            filter_['destination_id'] = destination_id
+
+        return self._get_one('messages', filter_, sync.Message)
+
+    def get_record(self, record_id):
+        filter_ = {
+            'id': record_id
+        }
+
+        record = self._get_one('records', filter_, sync.Record)
+
+        if record is None:
+            return None
+
+        record.remotes = self.get_remotes([record_id])
+
+        return record
+
+    def get_remote(self, node_id, remote_id=None, record_id=None):
+        if remote_id is None and record_id is None:
+            raise sync.exceptions.InvalidOperationError(
+                Text.RemoteOrRecordRequired)
+
+        filter_ = {
+            'node_id': node_id
+        }
+        if remote_id is not None:
+            filter_['remote_id'] = remote_id
+        elif record_id is not None:
+            filter_['record_id'] = record_id
+
+        return self._get_one('remotes', filter_, sync.Remote)
+
+    def get_remotes(self, record_ids):
+        filter_ = {
+            'record_id': record_ids
+        }
+        return self._get_many('remotes', filter_, sync.Remote)
+
+    def get_nodes(self):
+        return self._get_many('nodes', {}, sync.Node)
+
+    def get_records(self):
+        """Fetch all records using a generator.
+        :returns: Batches of records.
+        :rtype: generator
+        """
+        filter_ = {
+            'deleted': False
+        }
+        chunk = self._get_many('records', filter_, sync.Record)
+
+        while True:
+            # Use a dictionary so that the associated remote objects
+            # can easily be added into the appropriate
+            # 'record.remotes' object cache.
+            results = {}
+
+            # Fetch a batch of records.
+            if not chunk:
+                break
+
+            for obj in chunk:
+                results[obj.id] = obj
+
+            chunk = None
+
+            # Efficiently fetch the associated remote objects for
+            # this batch of records.
+            remotes = self.get_remotes(results.keys())
+
+            # Add the remote objects to the associated record.remotes
+            # cache.
+            for remote in remotes:
+                results[remote.record_id].remotes.append(remote)
+
+            yield results.values()
+
+    def get_errors(self, message_id):
+        filter_ = {
+            'message_id': message_id
+        }
+        return self._get_many('errors', filter_, sync.Error)
+
+    def get_changes(self, message_id):
+        filter_ = {
+            'message_id': message_id
+        }
+        return self._get_many('changes', filter_, sync.Change)
+
+    def update_messages(self, node_id, record_id, remote_id):
+        filter_ = {
+            'destination_id': node_id,
+            'record_id': record_id
+        }
+        values = {'remote_id': remote_id}
+        self.session['messages'].update(filter_, values)

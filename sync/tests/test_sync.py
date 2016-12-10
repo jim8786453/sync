@@ -1,5 +1,6 @@
 import json
 import jsonschema
+import mongomock
 import os
 import os.path
 import pytest
@@ -60,9 +61,20 @@ def generate_postgresql_storage():
     return postgres_storage
 
 
+def generate_mongo_storage():
+    """Return a sync.storage.PostgresStorage object.
+
+    """
+    client = mongomock.MongoClient()
+    mongo_storage = storage.MongoStorage(sync.generate_id())
+    mongo_storage.connect('', create_db=True, client=client)
+    return mongo_storage
+
+
 storage_generators = [
     generate_mock_storage,
-    generate_postgresql_storage
+    generate_postgresql_storage,
+    generate_mongo_storage
 ]
 
 
