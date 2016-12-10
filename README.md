@@ -20,10 +20,10 @@ TODO
 ### 2. Micro-service migration
 TODO
 
-## HTTP Admin API documentation
+## Admin API
 TODO
 
-## HTTP Messaging API documentation
+## Messaging API
 TODO
 
 ## Database support
