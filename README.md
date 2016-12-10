@@ -12,14 +12,6 @@ For example, a poor but commonly used method of synchronising records of data be
 
 The [documentation](http://py-sync.readthedocs.io/en/latest/?) is currently built and hosted on Read The Docs.
 
-## Example use cases
-
-### 1. Simple [Enterprise Application Integration](https://en.wikipedia.org/wiki/Enterprise_application_integration) (EAI)
-TODO
-
-### 2. Micro-service migration
-TODO
-
 ## Admin API
 TODO
 
@@ -27,6 +19,14 @@ TODO
 TODO
 
 ## Database support
+TODO
+
+## Example use cases
+
+### 1. Simple [Enterprise Application Integration](https://en.wikipedia.org/wiki/Enterprise_application_integration) (EAI)
+TODO
+
+### 2. Micro-service migration
 TODO
 
 ## Alternatives
