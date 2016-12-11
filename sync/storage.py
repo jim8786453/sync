@@ -1002,7 +1002,8 @@ class MongoStorage(Storage):
         filter_ = {
             'deleted': False
         }
-        chunk = self._get_many('records', filter_, sync.Record)
+        skip = 0
+        limit = 1
 
         while True:
             # Use a dictionary so that the associated remote objects
@@ -1011,13 +1012,22 @@ class MongoStorage(Storage):
             results = {}
 
             # Fetch a batch of records.
-            if not chunk:
+            rows = self.session['records'].find(filter_, skip=skip,
+                                                limit=limit)
+            skip = skip + limit
+            chunk = []
+            for row in rows:
+                obj = sync.Record()
+                for key in row.keys():
+                    if not key == '_id':
+                        setattr(obj, key, row[key])
+                chunk.append(obj)
+
+            if len(chunk) == 0:
                 break
 
             for obj in chunk:
                 results[obj.id] = obj
-
-            chunk = None
 
             # Efficiently fetch the associated remote objects for
             # this batch of records.

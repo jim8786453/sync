@@ -21,16 +21,5 @@ TODO
 ## Database support
 TODO
 
-## Example use cases
-
-### 1. Simple [Enterprise Application Integration](https://en.wikipedia.org/wiki/Enterprise_application_integration) (EAI)
-TODO
-
-### 2. Micro-service migration
-TODO
-
-## Alternatives
-TODO
-
 ## Project roadmap
 TODO
