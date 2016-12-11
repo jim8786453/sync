@@ -1,12 +1,14 @@
-import pytest
+import falcon
 import json
+import pytest
 
 from falcon.testing.client import TestClient as tc
 
 import sync
 
+from sync import exceptions
 from sync.conftest import postgresql
-from sync.http import server
+from sync.http import server, utils
 
 
 class TestHttp():
@@ -17,8 +19,9 @@ class TestHttp():
 
         yield
 
-        sync.s.drop()
-        sync.s.disconnect()
+        if sync.s is not None:
+            sync.s.drop()
+            sync.s.disconnect()
 
     @pytest.fixture(autouse=True)
     def client(self):
@@ -84,6 +87,14 @@ class TestHttp():
             'X-Sync-System-Id': self.system_id,
             'X-Sync-Node-Id': str(self.node_2['id'])
         }
+
+    def test_http_utils_inflate(self):
+        with pytest.raises(exceptions.InvalidJsonError):
+            utils.inflate("{", None, None)
+
+    def test_http_utils_obj_or_404(self):
+        with pytest.raises(falcon.HTTPNotFound):
+            utils.obj_or_404(None)
 
     def test_http_systems(self, request):
         # POST 400
@@ -205,6 +216,37 @@ class TestHttp():
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_1_headers)
         assert result.status_code == 200
+
+    def test_http_message_headers(self, request):
+        self.setup_system()
+        self.setup_nodes()
+
+        url = '/messages/pending'
+        headers = {
+            'X-Sync-System-Id': self.system_id
+        }
+        result = self.client.simulate_get(url, headers=headers)
+        assert result.status_code == 400
+
+        headers = {
+            'X-Sync-Node-Id': str(self.node_1['id'])
+        }
+        result = self.client.simulate_get(url, headers=headers)
+        assert result.status_code == 400
+
+        headers = {
+            'X-Sync-System-Id': 'foo',
+            'X-Sync-Node-Id': str(self.node_1['id'])
+        }
+        result = self.client.simulate_get(url, headers=headers)
+        assert result.status_code == 404
+
+        headers = {
+            'X-Sync-System-Id': self.system_id,
+            'X-Sync-Node-Id': 'foo'
+        }
+        result = self.client.simulate_get(url, headers=headers)
+        assert result.status_code == 404
 
     def test_http_message_pending(self, request):
         self.setup_system()

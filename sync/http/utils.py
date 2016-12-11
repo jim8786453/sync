@@ -3,8 +3,6 @@ import falcon
 import json
 import jsonschema
 
-import sync
-
 from sync.exceptions import InvalidJsonError
 
 
@@ -32,9 +30,6 @@ def inflate(json_data, obj, schema):
 def json_serial(obj):
     if isinstance(obj, datetime):
         serial = obj.isoformat()
-        return serial
-    elif isinstance(obj, sync.Node):
-        serial = obj.as_dict(with_id=True)
         return serial
     raise TypeError("Type not serializable: " + str(type(obj)))
 

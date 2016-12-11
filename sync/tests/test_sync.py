@@ -101,6 +101,10 @@ class TestSync():
         system.save()
         self.data = test_data()
 
+    def test_misc_storage_get_remote(self):
+        with pytest.raises(exceptions.InvalidOperationError):
+            sync.s.get_remote('', None, None)
+
     def test_system(self):
         system = sync.System.get()
         system.name = 'Mock'
@@ -901,6 +905,25 @@ class TestSync():
 
         with pytest.raises(exceptions.InvalidOperationError):
             n2.send(sync.Method.Create, {'foo': 'bar'}, remote_id='123')
+
+    def test_node__get_message(self):
+        node = sync.Node.create(create=True, read=True, update=True,
+                              delete=True)
+        with pytest.raises(exceptions.NotFoundError):
+            node._get_message('000000000000-0000-0000-000000000000')
+
+    def test_node_send_errors(self):
+        node = sync.Node.create(create=True, read=True, update=True,
+                              delete=True)
+        with pytest.raises(exceptions.InvalidOperationError):
+            node.send(sync.Method.Read)
+        with pytest.raises(exceptions.InvalidOperationError):
+            node.send(sync.Method.Create)
+
+    def test_message_get_history_empty(self):
+        message = sync.Message()
+        assert [] == message.errors()
+        assert [] == message.changes()
 
 
 class TestBaseStorage():
