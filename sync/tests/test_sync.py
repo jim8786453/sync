@@ -71,14 +71,14 @@ def generate_mongo_storage():
     return mongo_storage
 
 
-storage_generators = [
+STORAGE_GENERATORS = [
     generate_mock_storage,
     generate_postgresql_storage,
     generate_mongo_storage
 ]
 
 
-@pytest.mark.parametrize('storage_fun', storage_generators)
+@pytest.mark.parametrize('storage_fun', STORAGE_GENERATORS)
 class TestSync():
 
     @pytest.fixture(autouse=True)

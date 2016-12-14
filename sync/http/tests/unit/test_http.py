@@ -1,5 +1,6 @@
 import falcon
 import json
+import mongomock
 import pytest
 
 from falcon.testing.client import TestClient as tc
@@ -11,11 +12,23 @@ from sync.conftest import postgresql
 from sync.http import server, utils
 
 
+STORAGE_CLASSES = [
+    'MockStorage',
+    'PostgresStorage',
+    'MongoStorage'
+]
+
+
+@pytest.mark.parametrize('storage_class', STORAGE_CLASSES)
 class TestHttp():
 
     @pytest.fixture(autouse=True)
-    def storage(self, request, session_setup):
-        sync.settings.POSTGRES_CONNECTION = postgresql.url()
+    def storage(self, request, session_setup, storage_class):
+        sync.settings.storage_class = storage_class
+        if storage_class == 'PostgresStorage':
+            sync.settings.POSTGRES_CONNECTION = postgresql.url()
+        elif storage_class == 'MongoStorage':
+            sync.storage.MongoClient = mongomock.MongoClient
 
         yield
 

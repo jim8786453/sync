@@ -5,6 +5,7 @@ import os
 
 - MockStorage
 - PostgresStorage
+- MongoStorage
 
 """
 STORAGE_CLASS = os.environ.get('STORAGE_CLASS', None)
