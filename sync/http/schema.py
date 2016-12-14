@@ -309,6 +309,11 @@ node_patch = {
     ]
 }
 
+node_list_get = {
+    "$schema": "http://json-schema.org/draft-04/schema#node_list_get",
+    "type": "array"
+}
+
 message_pending_get = {
     "$schema": "http://json-schema.org/draft-04/schema#node_send",
     "type": "boolean"

@@ -19,15 +19,18 @@ def init_storage(system_id, create_db=False):
             'base_connection': settings.POSTGRES_CONNECTION
         }
         init_postgresql(args, system_id, create_db=create_db)
+    elif settings.STORAGE_CLASS == 'MongoStorage':
+        args = {
+            'base_connection': settings.MONGO_CONNECTION
+        }
+        init_mongo(args, system_id, create_db)
     elif settings.STORAGE_CLASS == 'MockStorage':
         init_mock(system_id, create_db)
-    elif settings.STORAGE_CLASS == 'MongoStorage':
-        init_mongo(system_id, create_db)
 
 
 def init_mock(system_id, create_db=False):
     storage = PostgresStorage(system_id)
-    sync.init(storage, create_db)
+    sync.init(storage)
 
 
 def init_postgresql(settings, system_id, create_db=False):
@@ -700,6 +703,8 @@ class PostgresStorage(Storage):
                 table.c.state == state,
                 table.c.destination_id == destination_id))
 
+        query = query.order_by(table.c.timestamp)
+
         return self._get_one(query, sync.Message, with_for_update)
 
     def get_record(self, record_id):
@@ -712,7 +717,7 @@ class PostgresStorage(Storage):
         if record is None:
             return None
 
-        record.remotes = self.get_remotes([record_id])
+        record._remotes = self.get_remotes([record_id])
 
         return record
 
@@ -797,7 +802,7 @@ class PostgresStorage(Storage):
                 # Add the remote objects to the associated record.remotes
                 # cache.
                 for remote in remotes:
-                    results[remote.record_id].remotes.append(remote)
+                    results[remote.record_id]._remotes.append(remote)
 
                 yield results.values()
         finally:
@@ -835,8 +840,8 @@ class MongoStorage(Storage):
         self.id = system_id
         self.session = None
 
-    def _get_one(self, table, filter_, class_):
-        record = self.session[table].find_one(filter_)
+    def _get_one(self, table, filter_, class_, sort=None):
+        record = self.session[table].find_one(filter_, sort=sort)
 
         if record is None:
             return None
@@ -954,7 +959,9 @@ class MongoStorage(Storage):
             filter_['state'] = state
             filter_['destination_id'] = destination_id
 
-        return self._get_one('messages', filter_, sync.Message)
+        sort = [('timestamp', 1)]
+
+        return self._get_one('messages', filter_, sync.Message, sort)
 
     def get_record(self, record_id):
         filter_ = {
@@ -966,7 +973,7 @@ class MongoStorage(Storage):
         if record is None:
             return None
 
-        record.remotes = self.get_remotes([record_id])
+        record._remotes = self.get_remotes([record_id])
 
         return record
 
@@ -987,7 +994,9 @@ class MongoStorage(Storage):
 
     def get_remotes(self, record_ids):
         filter_ = {
-            'record_id': record_ids
+            'record_id':  {
+                '$in': record_ids
+            }
         }
         return self._get_many('remotes', filter_, sync.Remote)
 
@@ -1036,7 +1045,7 @@ class MongoStorage(Storage):
             # Add the remote objects to the associated record.remotes
             # cache.
             for remote in remotes:
-                results[remote.record_id].remotes.append(remote)
+                results[remote.record_id]._remotes.append(remote)
 
             yield results.values()
 
@@ -1057,5 +1066,7 @@ class MongoStorage(Storage):
             'destination_id': node_id,
             'record_id': record_id
         }
-        values = {'remote_id': remote_id}
-        self.session['messages'].update(filter_, values)
+        values = {
+            '$set': {'remote_id': remote_id}
+        }
+        self.session['messages'].update_many(filter_, values)

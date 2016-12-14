@@ -762,7 +762,7 @@ class Record(Base):
         #: head (dict): The current state of the record.
         self.head = None
         #: remotes (list): Cache of sync.Remote objects for this record.
-        self.remotes = []
+        self._remotes = []
 
     def validate(self):
         """Validate the record head against the current JSON schema.
@@ -792,7 +792,7 @@ class Record(Base):
         :type node_id: str
 
         """
-        for r in self.remotes:
+        for r in self._remotes:
             if r.node_id == node_id:
                 return r
         return None

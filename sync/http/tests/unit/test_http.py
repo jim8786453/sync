@@ -383,7 +383,7 @@ class TestHttp():
         url = '/messages/' + result.json['id']
         body = {
             'success': True,
-            'remote_id': "abcd"
+            'remote_id': 'abcd'
         }
         body_json = json.dumps(body)
         result = self.client.simulate_patch(url, body=body_json,

@@ -50,6 +50,13 @@ class System:
 
 class NodeList:
 
+    def on_get(self, req, resp, system_id):
+        init(system_id)
+        nodes = sync.Node.get()
+        jsonschema.validators.Draft4Validator(
+            schema.node_list_get).validate(nodes)
+        resp.body = utils.json.dumps(nodes, default=utils.json_serial)
+
     def on_post(self, req, resp, system_id):
         init(system_id)
         json_data = req.stream.read()
