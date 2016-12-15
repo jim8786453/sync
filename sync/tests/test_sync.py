@@ -671,10 +671,8 @@ class TestSync():
 
         assert len(message.changes()) == 2
 
-        with pytest.raises(sync.exceptions.InvalidOperationError) as e:
+        with pytest.raises(sync.exceptions.InvalidOperationError):
             message.update(sync.State.Pending)
-        assert e.message == sync.Text.MessageStateInvalid.format(
-            sync.State.Acknowledged, sync.State.Pending)
 
     def test_message_acknowledge(self):
         message = sync.Message()
