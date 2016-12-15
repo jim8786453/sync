@@ -15,6 +15,14 @@ from sync.conftest import postgresql
 from sync.storage import Storage
 
 
+class MockError(Exception):
+    pass
+
+
+def error_fun(_, __=None):
+    raise MockError('Mock')
+
+
 def test_schema():
     """"Returns a JSON schema document that validates the data returned by
     test_data().
@@ -83,6 +91,9 @@ class TestSync():
 
     @pytest.fixture(autouse=True)
     def storage(self, request, session_setup, storage_fun):
+        # Should not raise an error.
+        sync.close()
+
         self.storage = storage_fun()
 
         sync.init(self.storage)
@@ -662,8 +673,8 @@ class TestSync():
 
         with pytest.raises(sync.exceptions.InvalidOperationError) as e:
             message.update(sync.State.Pending)
-            assert e.message == sync.Text.MessageStateInvalid.format(
-                sync.State.Acknowledged, sync.State.Pending)
+        assert e.message == sync.Text.MessageStateInvalid.format(
+            sync.State.Acknowledged, sync.State.Pending)
 
     def test_message_acknowledge(self):
         message = sync.Message()
@@ -908,22 +919,43 @@ class TestSync():
 
     def test_node__get_message(self):
         node = sync.Node.create(create=True, read=True, update=True,
-                              delete=True)
+                                delete=True)
         with pytest.raises(exceptions.NotFoundError):
             node._get_message('000000000000-0000-0000-000000000000')
 
     def test_node_send_errors(self):
         node = sync.Node.create(create=True, read=True, update=True,
-                              delete=True)
+                                delete=True)
         with pytest.raises(exceptions.InvalidOperationError):
             node.send(sync.Method.Read)
         with pytest.raises(exceptions.InvalidOperationError):
-            node.send(sync.Method.Create)
+            node.send(sync.Method.Create, record_id='not none')
 
     def test_message_get_history_empty(self):
         message = sync.Message()
         assert [] == message.errors()
         assert [] == message.changes()
+
+    def test_message_send_raise_errors(self):
+        node = sync.Node.create(create=True, read=True, update=True,
+                                delete=True)
+        original = sync.Message._execute
+        sync.Message._execute = error_fun
+        with pytest.raises(MockError):
+            node.send(sync.Method.Create, {})
+        sync.Message._execute = original
+
+    def test_message_fetch_raise_errors(self):
+        n1 = sync.Node.create(create=True, read=True, update=True,
+                              delete=True)
+        n2 = sync.Node.create(create=True, read=True, update=True,
+                              delete=True)
+        n1.send(sync.Method.Create, {'foo': 'bar'}, remote_id='abc')
+        original = sync.Message.update
+        sync.Message.update = error_fun
+        with pytest.raises(MockError):
+            n2.fetch()
+        sync.Message.update = original
 
 
 class TestBaseStorage():
