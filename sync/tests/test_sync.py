@@ -56,7 +56,7 @@ def generate_mock_storage():
 
     """
     mock_storage = storage.MockStorage(sync.generate_id())
-    mock_storage.connect(sync.generate_id())
+    mock_storage.connect(create_db=True)
     return mock_storage
 
 
@@ -64,8 +64,9 @@ def generate_postgresql_storage():
     """Return a sync.storage.PostgresStorage object.
 
     """
+    sync.settings.POSTGRES_CONNECTION = postgresql.url()
     postgres_storage = storage.PostgresStorage(sync.generate_id())
-    postgres_storage.connect(postgresql.url(), create_db=True)
+    postgres_storage.connect(create_db=True)
     return postgres_storage
 
 
@@ -73,9 +74,9 @@ def generate_mongo_storage():
     """Return a sync.storage.PostgresStorage object.
 
     """
-    client = mongomock.MongoClient()
+    sync.storage.mongo_client = mongomock.MongoClient()
     mongo_storage = storage.MongoStorage(sync.generate_id())
-    mongo_storage.connect('', create_db=True, client=client)
+    mongo_storage.connect(create_db=True)
     return mongo_storage
 
 
@@ -91,7 +92,7 @@ class TestSync():
 
     @pytest.fixture(autouse=True)
     def storage(self, request, session_setup, storage_fun):
-        # Should not raise an error.
+        # Closing before init should not raise an error.
         sync.close()
 
         self.storage = storage_fun()

@@ -1,4 +1,6 @@
 import copy
+import six
+import sys
 
 import sqlalchemy as sqla
 
@@ -13,35 +15,21 @@ from sync.constants import Text
 from sync.exceptions import DatabaseNotFoundError
 
 
+# A cache of MockStorage objects.
+mock_storage_objects = {}
+
+# Used to store a mock Mongodb client.
+test_mongo_client = None
+
+
 def init_storage(system_id, create_db=False):
-    if settings.STORAGE_CLASS == 'PostgresStorage':
-        args = {
-            'base_connection': settings.POSTGRES_CONNECTION
-        }
-        init_postgresql(args, system_id, create_db=create_db)
-    elif settings.STORAGE_CLASS == 'MongoStorage':
-        args = {
-            'base_connection': settings.MONGO_CONNECTION
-        }
-        init_mongo(args, system_id, create_db)
-    elif settings.STORAGE_CLASS == 'MockStorage':
-        init_mock(system_id, create_db)
+    """
 
-
-def init_mock(system_id, create_db=False):
-    storage = PostgresStorage(system_id)
-    sync.init(storage)
-
-
-def init_postgresql(settings, system_id, create_db=False):
-    storage = PostgresStorage(system_id)
-    storage.connect(settings['base_connection'], create_db)
-    sync.init(storage)
-
-
-def init_mongo(settings, system_id, create_db=False):
-    storage = MongoStorage(system_id)
-    storage.connect(settings['base_connection'], create_db)
+    """
+    current_module = sys.modules[__name__]
+    storage_class = getattr(current_module, settings.STORAGE_CLASS)
+    storage = storage_class(system_id)
+    storage.connect(create_db=create_db)
     sync.init(storage)
 
 
@@ -51,7 +39,7 @@ class Storage(object):
 
     """
 
-    def connect(self, _=None, __=None):
+    def connect(self):
         """Setup a connection to the storage backend if needed."""
         raise NotImplementedError
 
@@ -250,6 +238,7 @@ class MockStorage(Storage):
     def __init__(self, system_id):
         self.id = system_id
 
+        self.system = None
         self.nodes = {}
         self.messages = {}
         self.errors = {}
@@ -263,8 +252,21 @@ class MockStorage(Storage):
 
         dict_[obj.id] = copy.deepcopy(obj)
 
-    def connect(self, _=None, __=None):
-        pass
+    def connect(self, create_db=False):
+        if self.id not in mock_storage_objects and not create_db:
+            raise DatabaseNotFoundError()
+
+        if self.id in mock_storage_objects:
+            obj = mock_storage_objects[self.id]
+            self.system = obj.system
+            self.nodes = obj.nodes
+            self.messages = obj.messages
+            self.errors = obj.errors
+            self.changes = obj.changes
+            self.records = obj.records
+            self.remotes = obj.remotes
+
+        mock_storage_objects[self.id] = self
 
     def disconnect(self):
         pass
@@ -329,6 +331,13 @@ class MockStorage(Storage):
                 return r
         return None
 
+    def get_remotes(self, record_ids):
+        results = []
+        for r in self.remotes.values():
+            if r.record_id in record_ids:
+                results.append(r)
+        return results
+
     def get_message(self, message_id=None, destination_id=None,
                     state=sync.constants.State.Pending, with_for_update=False):
         if message_id is not None:
@@ -346,11 +355,20 @@ class MockStorage(Storage):
         return self.nodes.values()
 
     def get_records(self):
-        results = []
+        records = []
         for r in self.records.values():
             if not r.deleted:
-                results.append(r)
-        return [results]
+                records.append(r)
+
+        results = {}
+        for record in records:
+            results[record.id] = record
+
+        remotes = self.get_remotes(results.keys())
+        for remote in remotes:
+            results[remote.record_id]._remotes.append(remote)
+
+        return [results.values()]
 
     def get_errors(self, message_id):
         results = []
@@ -626,8 +644,8 @@ class PostgresStorage(Storage):
         if create_db:
             self.metadata.create_all()
 
-    def connect(self, base_url, create_db=False):
-        self.base_url = base_url
+    def connect(self, create_db=False):
+        self.base_url = settings.POSTGRES_CONNECTION
         self.engine = sqla.create_engine(self.base_url + self.id)
 
         if not database_exists(self.engine.url) and not create_db:
@@ -850,6 +868,8 @@ class MongoStorage(Storage):
         for key in record.keys():
             if not key == '_id':
                 setattr(obj, key, record[key])
+            if table == 'systems':
+                obj.schema = self._decode_dollar_prefix(obj.schema)
 
         return obj
 
@@ -865,12 +885,52 @@ class MongoStorage(Storage):
             for key in row.keys():
                 if not key == '_id':
                     setattr(obj, key, row[key])
+            if table == 'systems':
+                obj.schema = self._decode_dollar_prefix(obj.schema)
             results.append(obj)
 
         return results
 
+    def _encode_dollar_prefix(self, dict_value):
+        """To store JSON schema in Mongodb we need to escape any fields that
+        are prefixed with dollar characters ($) as these are reserved
+        in Mongodb.
+
+        """
+        if dict_value is None:
+            return dict_value
+        for key, value in six.iteritems(dict_value):
+            if key.startswith('$'):
+                encoded_key = '__dollar__' + key
+                dict_value[encoded_key] = dict_value[key]
+                del(dict_value[key])
+            if isinstance(value, dict):
+                dict_value[key] = self._encode_dollar_prefix(value)
+        return dict_value
+
+    def _decode_dollar_prefix(self, dict_value):
+        """To store JSON schema in Mongodb we needed to escape any fields that
+        are prefixed with dollar characters ($) as these are reserved
+        in Mongodb. This function restores the original key.
+
+        """
+        if dict_value is None:
+            return dict_value
+        for key, value in six.iteritems(dict_value):
+            if key.startswith('__dollar__'):
+                decoded_key = key.replace('__dollar__', '')
+                dict_value[decoded_key] = dict_value[key]
+                del(dict_value[key])
+            if isinstance(value, dict):
+                dict_value[key] = self._decode_dollar_prefix(value)
+        return dict_value
+
     def _save(self, table, obj, override_id=False):
         values = obj.as_dict(False)
+
+        if table == 'systems':
+            values['schema'] = self._encode_dollar_prefix(values['schema'])
+
         if not hasattr(obj, 'id') or obj.id is None:
             obj.id = override_id or sync.generate_id()
             values['id'] = obj.id
@@ -886,15 +946,12 @@ class MongoStorage(Storage):
 
     def _database_exists(self):
         names = self.client.database_names()
-        if self.id in names:
-            return True
-        else:
-            return False
+        return self.id in names
 
-    def connect(self, base_url, create_db=False, client=None):
-        self.base_url = base_url
+    def connect(self, create_db=False, client=test_mongo_client):
+        self.base_url = settings.MONGO_CONNECTION
         if client is None:
-            self.client = MongoClient(base_url)
+            self.client = MongoClient(self.base_url)
         else:
             self.client = client
 
@@ -1040,7 +1097,7 @@ class MongoStorage(Storage):
 
             # Efficiently fetch the associated remote objects for
             # this batch of records.
-            remotes = self.get_remotes(results.keys())
+            remotes = self.get_remotes(list(results.keys()))
 
             # Add the remote objects to the associated record.remotes
             # cache.

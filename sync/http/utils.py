@@ -36,6 +36,11 @@ def json_serial(obj):
     elif isinstance(obj, sync.Node):
         serial = obj.as_dict(with_id=True)
         return serial
+    if isinstance(obj, type({}.keys())):
+        return list(obj)
+    if isinstance(obj, type({}.values())):
+        return list(obj)
+
     raise TypeError("Type not serializable: " + str(type(obj)))
 
 

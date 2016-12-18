@@ -16,7 +16,7 @@ del os.link
 setup(
     author='Jim Kennedy',
     author_email='jim8786453@gmail.com',
-    description='Synchronise data',
+    description='Helps manage the synchronisation of data',
     install_requires=reqs,
     name='sync',
     packages=['sync'],

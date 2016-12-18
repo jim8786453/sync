@@ -1,5 +1,17 @@
 
 
+class Backend(object):
+    """Database backends.
+
+    """
+
+    Mock = 'MockStorage'
+    Mongo = 'MongoStorage'
+    Postgres = 'PostgresStorage'
+
+    All = [Mock, Mongo, Postgres]
+
+
 class Type(object):
     """Object types used in Sync's internals.
 
@@ -54,3 +66,4 @@ class Text(object):
     RemoteOrRecordRequired = 'Either a remote_id or record_id is required.'
     RemoteInUse = 'remote_id already in use: {0}'
     RecordExists = 'Create failed as record already exists'
+    UnknownStorage = 'Unknown storage class: {0}'

@@ -9,26 +9,20 @@ import sync
 
 from sync import exceptions
 from sync.conftest import postgresql
+from sync.constants import Backend
 from sync.http import server, utils
 
 
-STORAGE_CLASSES = [
-    'MockStorage',
-    'PostgresStorage',
-    'MongoStorage'
-]
-
-
-@pytest.mark.parametrize('storage_class', STORAGE_CLASSES)
+@pytest.mark.parametrize('storage_class', Backend.All)
 class TestHttp():
 
     @pytest.fixture(autouse=True)
     def storage(self, request, session_setup, storage_class):
-        sync.settings.storage_class = storage_class
-        if storage_class == 'PostgresStorage':
+        sync.settings.STORAGE_CLASS = storage_class
+        if storage_class == Backend.Postgres:
             sync.settings.POSTGRES_CONNECTION = postgresql.url()
-        elif storage_class == 'MongoStorage':
-            sync.storage.MongoClient = mongomock.MongoClient
+        elif storage_class == Backend.Mongo:
+            sync.storage.mongo_client = mongomock.MongoClient()
 
         yield
 

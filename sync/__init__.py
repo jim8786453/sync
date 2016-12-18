@@ -81,6 +81,16 @@ def merge_patch(target, patch):
         return patch
 
 
+def generate_datetime():
+    """Get the current datetime with reduced precision of the microsecond
+    component as not all storage backends support Python's precision.
+
+    """
+    now = datetime.datetime.utcnow()
+    microsecond = int(str(now.microsecond)[0:3] + '000')
+    return now.replace(microsecond=microsecond)
+
+
 class Base(object):
     """Base class for all model classes to inherit from.
 
@@ -403,7 +413,7 @@ class Message(Base):
         #: destination_id (str): Id of the destination node.
         self.destination_id = None
         #: timestamp (datetime): When the message was created.
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = generate_datetime()
         #: method (sync.constants.Method): Create, read, update or delete.
         self.method = Method.Create
         #: payload (dict): The data to use for create, read or updates.
@@ -715,7 +725,7 @@ class Error(Base):
         #: message_id (str): Unique id of the message this error belongs to.
         self.message_id = None
         #: timestamp (datetime.datetime): When the error occurred.
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = generate_datetime()
         #: text (str): Textual description of the error.
         self.text = None
 
@@ -735,7 +745,7 @@ class Change(Base):
         #: message_id (str): Unique id of the message this change belongs to.
         self.message_id = None
         #: timestamp (datetime.datetime): When the change occurred.
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = generate_datetime()
         #: state (sync.constants.State): The new message state.
         self.state = None
         #: text (str): Textual description of the change.
@@ -756,7 +766,7 @@ class Record(Base):
         self.id = None
         #: last_updated (datetime.datetime): When the last change to
         #: the record was made.
-        self.last_updated = datetime.datetime.utcnow()
+        self.last_updated = generate_datetime()
         #: deleted (bool): Has the record been deleted.
         self.deleted = False
         #: head (dict): The current state of the record.
@@ -782,7 +792,7 @@ class Record(Base):
 
     def save(self):
         """Save the object using the global sync.Storage object."""
-        self.last_updated = datetime.datetime.utcnow()
+        self.last_updated = generate_datetime()
         s.save_record(self)
 
     def remote(self, node_id):
