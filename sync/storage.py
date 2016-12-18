@@ -948,12 +948,9 @@ class MongoStorage(Storage):
         names = self.client.database_names()
         return self.id in names
 
-    def connect(self, create_db=False, client=test_mongo_client):
+    def connect(self, create_db=False):
         self.base_url = settings.MONGO_CONNECTION
-        if client is None:
-            self.client = MongoClient(self.base_url)
-        else:
-            self.client = client
+        self.client = test_mongo_client or MongoClient(self.base_url)
 
         if not self._database_exists() and not create_db:
             raise DatabaseNotFoundError()

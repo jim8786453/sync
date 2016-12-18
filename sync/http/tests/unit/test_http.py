@@ -22,7 +22,7 @@ class TestHttp():
         if storage_class == Backend.Postgres:
             sync.settings.POSTGRES_CONNECTION = postgresql.url()
         elif storage_class == Backend.Mongo:
-            sync.storage.mongo_client = mongomock.MongoClient()
+            sync.storage.test_mongo_client = mongomock.MongoClient()
 
         yield
 
