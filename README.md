@@ -23,7 +23,7 @@ TODO
 ## Database support
 Sync can use PostgreSQL or MongoDB as its database. It also provides a mock (in-memory) storage backend used for development and testing. Some features will only be available if the underlying database supports them, for example PostgreSQL transactions.
 
-## Running Sync from source
+## Running from source
 TODO
 
 ## Project roadmap
