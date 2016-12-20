@@ -24,12 +24,6 @@ class TestHttp():
         elif storage_class == Backend.Mongo:
             sync.storage.test_mongo_client = mongomock.MongoClient()
 
-        yield
-
-        if sync.s is not None:
-            sync.s.drop()
-            sync.s.disconnect()
-
     @pytest.fixture(autouse=True)
     def client(self):
         self.client = tc(server.api)
