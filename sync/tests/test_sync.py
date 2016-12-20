@@ -967,7 +967,7 @@ class TestSync():
 
     def test_storage_get_many_empty(self):
         nodes = sync.Node.get()
-        assert nodes is []
+        assert nodes == []
 
 
 class TestBaseStorage():
