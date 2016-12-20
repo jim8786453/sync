@@ -352,7 +352,7 @@ class MockStorage(Storage):
         return None
 
     def get_nodes(self):
-        return self.nodes.values()
+        return list(self.nodes.values())
 
     def get_records(self):
         records = []
