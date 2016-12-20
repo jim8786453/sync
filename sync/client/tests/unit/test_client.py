@@ -2,7 +2,7 @@ import httpretty
 import json
 import pytest
 
-from sync.client import Client
+from sync.client import Client, ClientError
 
 
 class TestClient():
@@ -28,6 +28,16 @@ class TestClient():
         system = self.client.create_system('test', {}, True)
         assert system.id == mock_response['id']
         assert system.name == mock_response['name']
+
+    @httpretty.activate
+    def test_client_create_system_error(self):
+        url = 'http://sync.test/systems'
+        httpretty.register_uri(httpretty.POST, url,
+                               body=json.dumps({}),
+                               content_type='application/json',
+                               status=400)
+        with pytest.raises(ClientError):
+            self.client.create_system(None, None, None)
 
     @httpretty.activate
     def test_client_get_system(self):

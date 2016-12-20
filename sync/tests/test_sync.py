@@ -87,14 +87,17 @@ STORAGE_GENERATORS = [
 ]
 
 
+def test_close_none_storage():
+    # Closing before init should not raise an error.
+    sync.close()
+    assert True
+
+
 @pytest.mark.parametrize('storage_fun', STORAGE_GENERATORS)
 class TestSync():
 
     @pytest.fixture(autouse=True)
     def storage(self, request, session_setup, storage_fun):
-        # Closing before init should not raise an error.
-        sync.close()
-
         self.storage = storage_fun()
 
         sync.init(self.storage)
@@ -134,6 +137,12 @@ class TestSync():
         assert system == returned
 
         system.name = 'Update'
+        system.save()
+        assert system != returned
+        returned = sync.System.get()
+        assert system == returned
+
+        system.schema = None
         system.save()
         assert system != returned
         returned = sync.System.get()
@@ -955,6 +964,10 @@ class TestSync():
         with pytest.raises(MockError):
             n2.fetch()
         sync.Message.update = original
+
+    def test_storage_get_many_empty(self):
+        nodes = sync.Node.get()
+        assert nodes is None
 
 
 class TestBaseStorage():

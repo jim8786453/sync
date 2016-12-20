@@ -885,8 +885,6 @@ class MongoStorage(Storage):
             for key in row.keys():
                 if not key == '_id':
                     setattr(obj, key, row[key])
-            if table == 'systems':
-                obj.schema = self._decode_dollar_prefix(obj.schema)
             results.append(obj)
 
         return results

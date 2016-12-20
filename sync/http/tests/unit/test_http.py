@@ -10,7 +10,7 @@ import sync
 from sync import exceptions
 from sync.conftest import postgresql
 from sync.constants import Backend
-from sync.http import server, utils
+from sync.http import errors, server, utils
 
 
 @pytest.mark.parametrize('storage_class', Backend.All)
@@ -186,6 +186,11 @@ class TestHttp():
         assert result.status_code == 201
         node_2_id = result.json['id']
         assert node_2_id is not None
+
+        # GET 200
+        url = '/systems/{0}/nodes/'.format(self.system_id)
+        result = self.client.simulate_get(url)
+        assert result.status_code == 200
 
         # GET 200
         url = '/systems/{0}/nodes/{1}'.format(self.system_id, node_1_id)
@@ -429,3 +434,28 @@ class TestHttp():
         result = self.client.simulate_post(url, headers=self.node_2_headers)
         assert result.status_code == 200
         assert result.json['remote_id'] == 'abcd'
+
+
+def test_utils_json_serial():
+    node = sync.Node()
+    node.id = 'foo'
+    serial = utils.json_serial(node)
+    assert serial['id'] == node.id
+
+    value = {}.keys()
+    serial = utils.json_serial(value)
+    assert serial == []
+
+    value = {}.values()
+    serial = utils.json_serial(value)
+    assert serial == []
+
+    # Type not handled.
+    value = 10
+    with pytest.raises(TypeError):
+        utils.json_serial(value)
+
+
+def test_raise_http_invalid_request_error():
+    with pytest.raises(falcon.HTTPBadRequest):
+        errors.raise_http_invalid_request(None, None, None, None)

@@ -10,8 +10,9 @@ except ImportError:
 
 class ClientError(Exception):
 
-    def __init__(self, response):
-        self.response == response
+    def __init__(self, message, response):
+        super(Exception, self).__init__(message)
+        self.response = response
 
 
 class ClientObject(object):
@@ -27,7 +28,7 @@ class Client(object):
         if response.status_code in (200, 201):
             return
 
-        raise ClientError(response)
+        raise ClientError('Error %s' % response.status_code, response)
 
     def _parse_response(self, response):
         self._check_response(response)
