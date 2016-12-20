@@ -5,22 +5,6 @@ import sync
 from sync.storage import init_storage
 
 
-def _call_init_storage(system_id, create_db=False):
-    """When running under unit tests a separate process is not used and
-    this is mocked.
-
-    """
-    init_storage(system_id, create_db)
-
-
-def _call_close():
-    """When running under unit tests a separate process is not used and
-    this is mocked.
-
-    """
-    sync.close()
-
-
 def run(fun, args):
     """Run a function in a seperate process.
 
@@ -43,7 +27,7 @@ def node_sync(system_id, node_id):
     :type node_id: str
     """
     try:
-        _call_init_storage(system_id)
+        init_storage(system_id, False)
 
         node = sync.Node.get(node_id)
         for batch in sync.Record.get_all():
@@ -58,7 +42,7 @@ def node_sync(system_id, node_id):
                                   record_id=record.id,
                                   remote_id=remote_id)
     finally:
-        _call_close()
+        sync.close()
 
 
 def message_propagate(system_id, message):
@@ -71,7 +55,7 @@ def message_propagate(system_id, message):
 
     """
     try:
-        _call_init_storage(system_id)
+        init_storage(system_id, False)
 
         nodes = sync.Node.get()
 
@@ -83,4 +67,4 @@ def message_propagate(system_id, message):
                               message.id, node.id, message.record_id,
                               remote_id)
     finally:
-        _call_close()
+        sync.close()

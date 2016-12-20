@@ -1,5 +1,6 @@
-import testing.postgresql
+import multiprocessing
 import pytest
+import testing.postgresql
 
 import sync
 
@@ -26,7 +27,7 @@ def mock_run(fun, args):
     fun(*args)
 
 
-def mock_call_init_storage(system_id, create_db=False):
+def mock_init_storage(system_id, create_db=False):
     """Mock this functionality as unit tests do not run tasks in seperate
     processes so results can more easily be verified.
 
@@ -34,12 +35,22 @@ def mock_call_init_storage(system_id, create_db=False):
     pass
 
 
-def mock_call_close():
+def mock_close():
     """Mock this functionality as unit tests do not run tasks in seperate
     processes so results can more easily be verified.
 
     """
     pass
+
+
+class MockProcess(object):
+
+    def __init__(self, target, args):
+        self.target = target
+        self.args = args
+
+    def start(self):
+        self.target(*self.args)
 
 
 @pytest.fixture(autouse=True)
@@ -48,8 +59,6 @@ def no_async(monkeypatch):
     processes so results can more easily be verified.
 
     """
-    monkeypatch.setattr(sync.tasks, 'run', mock_run)
-    monkeypatch.setattr(sync.tasks, '_call_init_storage',
-                        mock_call_init_storage)
-    monkeypatch.setattr(sync.tasks, '_call_close',
-                        mock_call_close)
+    monkeypatch.setattr(sync.tasks, 'Process', MockProcess)
+    monkeypatch.setattr(sync.tasks, 'init_storage', mock_init_storage)
+    monkeypatch.setattr(sync.tasks.sync, 'close', mock_close)
