@@ -18,6 +18,14 @@ def run(fun, args):
     p.start()
 
 
+def _call_close():
+    """When running under unit tests a separate process is not used and
+    this is mocked.
+
+    """
+    sync.close()
+
+
 def node_sync(system_id, node_id):
     """Resend all records to a node.
 
@@ -42,7 +50,7 @@ def node_sync(system_id, node_id):
                                   record_id=record.id,
                                   remote_id=remote_id)
     finally:
-        sync.close()
+        _call_close()
 
 
 def message_propagate(system_id, message):
@@ -67,4 +75,4 @@ def message_propagate(system_id, message):
                               message.id, node.id, message.record_id,
                               remote_id)
     finally:
-        sync.close()
+        _call_close()

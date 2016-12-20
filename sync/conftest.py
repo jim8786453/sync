@@ -1,4 +1,3 @@
-import multiprocessing
 import pytest
 import testing.postgresql
 
@@ -20,13 +19,6 @@ def session_setup(request):
     request.addfinalizer(fin)
 
 
-def mock_run(fun, args):
-    """Apply args to a function.
-
-    """
-    fun(*args)
-
-
 def mock_init_storage(system_id, create_db=False):
     """Mock this functionality as unit tests do not run tasks in seperate
     processes so results can more easily be verified.
@@ -35,7 +27,7 @@ def mock_init_storage(system_id, create_db=False):
     pass
 
 
-def mock_close():
+def mock_call_close():
     """Mock this functionality as unit tests do not run tasks in seperate
     processes so results can more easily be verified.
 
@@ -61,4 +53,4 @@ def no_async(monkeypatch):
     """
     monkeypatch.setattr(sync.tasks, 'Process', MockProcess)
     monkeypatch.setattr(sync.tasks, 'init_storage', mock_init_storage)
-    monkeypatch.setattr(sync.tasks.sync, 'close', mock_close)
+    monkeypatch.setattr(sync.tasks, '_call_close', mock_call_close)
