@@ -307,8 +307,6 @@ class MockStorage(Storage):
         self._save(remote, self.remotes)
 
     def get_system(self):
-        if not hasattr(self, 'system'):
-            return None
         return self.system
 
     def get_node(self, node_id):
@@ -421,9 +419,6 @@ class PostgresStorage(Storage):
     def _get_many(self, query, class_):
         rows = self.connection.execute(query)
         rows = rows.fetchall()
-
-        if rows is None:
-            return []
 
         results = []
         for row in rows:
@@ -875,9 +870,6 @@ class MongoStorage(Storage):
 
     def _get_many(self, table, filter_, class_):
         rows = self.session[table].find(filter_)
-
-        if rows is None:
-            return []
 
         results = []
         for row in rows:

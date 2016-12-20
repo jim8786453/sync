@@ -29,6 +29,7 @@ def close():
     if s is None:
         return
     s.disconnect()
+    s = None
 
 
 def generate_id():
