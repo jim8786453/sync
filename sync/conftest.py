@@ -46,11 +46,13 @@ class MockProcess(object):
 
 
 @pytest.fixture(autouse=True)
-def no_async(monkeypatch):
+def no_async(request, monkeypatch):
     """Mock this functionality as unit tests do not run tasks in seperate
     processes so results can more easily be verified.
 
     """
     monkeypatch.setattr(sync.tasks, 'Process', MockProcess)
     monkeypatch.setattr(sync.tasks, 'init_storage', mock_init_storage)
+    if 'noautouse' in request.keywords:
+        return
     monkeypatch.setattr(sync.tasks, '_call_close', mock_call_close)

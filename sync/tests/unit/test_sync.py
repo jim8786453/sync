@@ -10,7 +10,7 @@ from operator import itemgetter
 
 import sync
 
-from sync import exceptions, storage
+from sync import exceptions, storage, tasks
 from sync.conftest import postgresql
 from sync.storage import Storage
 
@@ -91,6 +91,11 @@ def test_close_none_storage():
     # Closing before init should not raise an error.
     sync.close()
     assert True
+
+
+@pytest.mark.noautouse
+def test_tasks_call_close():
+    tasks._call_close()
 
 
 @pytest.mark.parametrize('storage_fun', STORAGE_GENERATORS)
