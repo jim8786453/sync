@@ -24,7 +24,24 @@ TODO
 Sync can use PostgreSQL or MongoDB as its database. It also provides a mock (in-memory) storage backend used for development and testing. Some features will only be available if the underlying database supports them, for example PostgreSQL transactions.
 
 ## Running from source
-TODO
+
+To run a Sync server from source run the following from the root project directory:
+
+```
+&> make dev-server
+```
+
+To run the full suite of tests use Tox from the root project directory:
+
+```
+&> tox
+```
+
+To build the documentation source:
+
+```
+&> cd docs && sphinx-apidoc -f -o source/ ../sync
+```
 
 ## Project roadmap
 TODO
