@@ -23,18 +23,18 @@ TODO
 ## Database support
 Sync can use PostgreSQL or MongoDB as its database. It also provides a mock (in-memory) storage backend used for development and testing. Some features will only be available if the underlying database supports them, for example PostgreSQL transactions.
 
-## Running from source
-
-To run a Sync server from source use the following command from the root project directory:
-
-```
-&> make dev-server
-```
+## Running Sync
 
 To run the full suite of tests use Tox from the root project directory:
 
 ```
 &> tox
+```
+
+To run a Sync server from source use the following command from the root project directory:
+
+```
+&> make dev-server
 ```
 
 To build the documentation source:
