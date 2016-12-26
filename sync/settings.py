@@ -10,7 +10,7 @@ import os
 """
 STORAGE_CLASS = os.environ.get('STORAGE_CLASS', None)
 if STORAGE_CLASS is None:
-    STORAGE_CLASS = 'PostgresStorage'
+    STORAGE_CLASS = 'MockStorage'
 
 
 """POSTGRES_CONNECTION: if using the PostgresStorage backend a base
