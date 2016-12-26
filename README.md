@@ -25,7 +25,7 @@ Sync can use PostgreSQL or MongoDB as its database. It also provides a mock (in-
 
 ## Running from source
 
-To run a Sync server from source run the following from the root project directory:
+To run a Sync server from source use the following command from the root project directory:
 
 ```
 &> make dev-server
