@@ -337,8 +337,7 @@ message_post = {
         },
     },
     "required": [
-        "method",
-        "payload"
+        "method"
     ]
 }
 
