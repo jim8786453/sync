@@ -312,7 +312,7 @@ nodes_get = {
                 "type": "boolean"
             },
             "delete": {
-                "type": "boolean"q
+                "type": "boolean"
             },
         },
         "required": [
