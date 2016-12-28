@@ -108,11 +108,11 @@ class TestSync():
         sync.init(self.storage)
         sync.System.init('test', {}, True)
 
-        assert sync.s == self.storage
+        assert sync.current_storage() == self.storage
 
         yield
 
-        sync.s.drop()
+        sync.current_storage().drop()
 
     @pytest.fixture(autouse=False)
     def test_schema(self, request):
@@ -123,7 +123,7 @@ class TestSync():
 
     def test_misc_storage_get_remote(self):
         with pytest.raises(exceptions.InvalidOperationError):
-            sync.s.get_remote('', None, None)
+            sync.current_storage().get_remote('', None, None)
 
     def test_system(self):
         system = sync.System.get()
@@ -174,14 +174,14 @@ class TestSync():
 
         message = sync.Message()
         message.origin_id = node.id
-        message.method = sync.Method.Create
+        message.method = sync.constants.Method.Create
         message.payload = {}
         message.save()
         returned = sync.Message.get(message.id)
         assert message.id is not None
         assert message == returned
 
-        message.state = sync.State.Processing
+        message.state = sync.constants.State.Processing
         assert message != returned
         message.save()
         returned = sync.Message.get(message.id)
@@ -189,7 +189,7 @@ class TestSync():
 
     def test_error(self):
         message = sync.Message()
-        message.method = sync.Method.Create
+        message.method = sync.constants.Method.Create
         message.save()
 
         error = sync.Error()
@@ -206,12 +206,12 @@ class TestSync():
 
     def test_change(self):
         message = sync.Message()
-        message.method = sync.Method.Create
+        message.method = sync.constants.Method.Create
         message.save()
 
         change = sync.Change()
         change.message_id = message.id
-        change.state = sync.State.Processing
+        change.state = sync.constants.State.Processing
         change.note = "mock"
         change.save()
         returned = message.changes()
@@ -360,7 +360,7 @@ class TestSync():
     def test_node_send(self):
         node = sync.Node.create(create=True, read=True, update=True,
                                 delete=True)
-        method = sync.Method.Create
+        method = sync.constants.Method.Create
         payload = {'foo': 'bar'}
         message = node.send(method, payload)
 
@@ -369,7 +369,7 @@ class TestSync():
         assert message.method == method
         assert message.payload == payload
         assert message.record_id is not None
-        assert message.state == sync.State.Acknowledged
+        assert message.state == sync.constants.State.Acknowledged
 
     def test_sync_node_has_pending(self):
         n1 = sync.Node.create(create=True, read=True, update=True,
@@ -377,7 +377,7 @@ class TestSync():
         n2 = sync.Node.create(create=True, read=True, update=True,
                               delete=True)
         assert n2.has_pending() is False
-        n1.send(sync.Method.Create, {'foo': 'bar'})
+        n1.send(sync.constants.Method.Create, {'foo': 'bar'})
         assert n2.has_pending() is True
         n2.fetch()
         assert n2.has_pending() is False
@@ -386,7 +386,7 @@ class TestSync():
         sender = sync.Node.create(create=True)
         fetcher = sync.Node.create(read=True)
 
-        method = sync.Method.Create
+        method = sync.constants.Method.Create
         payload = {'foo': 'bar'}
 
         sent = sender.send(method, payload)
@@ -402,16 +402,16 @@ class TestSync():
 
         assert fetched.origin_id is None
         assert fetched.destination_id == fetcher.id
-        assert fetched.state == sync.State.Processing
+        assert fetched.state == sync.constants.State.Processing
 
         message = fetcher.acknowledge(fetched.id)
-        assert message.state == sync.State.Acknowledged
+        assert message.state == sync.constants.State.Acknowledged
 
     def test_node_fetch_fail(self):
         sender = sync.Node.create(create=True)
         fetcher = sync.Node.create(read=True)
 
-        method = sync.Method.Create
+        method = sync.constants.Method.Create
         payload = {'foo': 'bar'}
 
         sent = sender.send(method, payload)
@@ -427,15 +427,15 @@ class TestSync():
 
         assert fetched.origin_id is None
         assert fetched.destination_id == fetcher.id
-        assert fetched.state == sync.State.Processing
+        assert fetched.state == sync.constants.State.Processing
 
         message = fetcher.fail(fetched.id)
-        assert message.state == sync.State.Failed
+        assert message.state == sync.constants.State.Failed
 
     def test_node_sync(self):
         sender = sync.Node.create(create=True)
 
-        method = sync.Method.Create
+        method = sync.constants.Method.Create
         payload = {'foo': 'bar'}
 
         sender.send(method, payload)
@@ -455,19 +455,19 @@ class TestSync():
     def test_node_check(self):
         node = sync.Node()
 
-        assert not node.check(sync.Method.Create)
-        assert not node.check(sync.Method.Read)
-        assert not node.check(sync.Method.Update)
-        assert not node.check(sync.Method.Delete)
+        assert not node.check(sync.constants.Method.Create)
+        assert not node.check(sync.constants.Method.Read)
+        assert not node.check(sync.constants.Method.Update)
+        assert not node.check(sync.constants.Method.Delete)
         assert not node.check(None)
 
         node.save()
         node = sync.Node.get(node.id)
 
-        assert not node.check(sync.Method.Create)
-        assert not node.check(sync.Method.Read)
-        assert not node.check(sync.Method.Update)
-        assert not node.check(sync.Method.Delete)
+        assert not node.check(sync.constants.Method.Create)
+        assert not node.check(sync.constants.Method.Read)
+        assert not node.check(sync.constants.Method.Update)
+        assert not node.check(sync.constants.Method.Delete)
         assert not node.check(None)
 
         node.create = True
@@ -475,33 +475,33 @@ class TestSync():
         node.update = True
         node.delete = True
 
-        assert node.check(sync.Method.Create)
-        assert node.check(sync.Method.Read)
-        assert node.check(sync.Method.Update)
-        assert node.check(sync.Method.Delete)
+        assert node.check(sync.constants.Method.Create)
+        assert node.check(sync.constants.Method.Read)
+        assert node.check(sync.constants.Method.Update)
+        assert node.check(sync.constants.Method.Delete)
 
         node.save()
         node = sync.Node.get(node.id)
 
-        assert node.check(sync.Method.Create)
-        assert node.check(sync.Method.Read)
-        assert node.check(sync.Method.Update)
-        assert node.check(sync.Method.Delete)
+        assert node.check(sync.constants.Method.Create)
+        assert node.check(sync.constants.Method.Read)
+        assert node.check(sync.constants.Method.Update)
+        assert node.check(sync.constants.Method.Delete)
 
         node.update = False
 
-        assert node.check(sync.Method.Create)
-        assert node.check(sync.Method.Read)
-        assert not node.check(sync.Method.Update)
-        assert node.check(sync.Method.Delete)
+        assert node.check(sync.constants.Method.Create)
+        assert node.check(sync.constants.Method.Read)
+        assert not node.check(sync.constants.Method.Update)
+        assert node.check(sync.constants.Method.Delete)
 
         node.save()
         node = sync.Node.get(node.id)
 
-        assert node.check(sync.Method.Create)
-        assert node.check(sync.Method.Read)
-        assert not node.check(sync.Method.Update)
-        assert node.check(sync.Method.Delete)
+        assert node.check(sync.constants.Method.Create)
+        assert node.check(sync.constants.Method.Read)
+        assert not node.check(sync.constants.Method.Update)
+        assert node.check(sync.constants.Method.Delete)
 
     def test_node_disable(self):
         node = sync.Node()
@@ -533,14 +533,14 @@ class TestSync():
 
         message = sync.Message()
         message.origin_id = node.id
-        message.method = sync.Method.Create
+        message.method = sync.constants.Method.Create
         message.payload = payload
         message._execute()
 
         assert message._record is not None
         assert message._record.head == payload
 
-        message.method = sync.Method.Delete
+        message.method = sync.constants.Method.Delete
         message._execute()
 
         assert message._record is not None
@@ -595,7 +595,7 @@ class TestSync():
 
         message = sync.Message()
         message.origin_id = node_1.id
-        message.method = sync.Method.Create
+        message.method = sync.constants.Method.Create
         message.payload = payload
         message._execute()
 
@@ -634,22 +634,22 @@ class TestSync():
             message._validate()
 
         message = sync.Message()
-        message.method = sync.Method.Create
+        message.method = sync.constants.Method.Create
         with pytest.raises(sync.exceptions.InvalidOperationError):
             message._validate()
 
         message = sync.Message()
-        message.method = sync.Method.Delete
+        message.method = sync.constants.Method.Delete
         with pytest.raises(sync.exceptions.InvalidOperationError):
             message._validate()
 
         node_1 = sync.Node.create(create=True, read=True)
         node_2 = sync.Node.create(create=True, read=True)
-        node_1.send(sync.Method.Create, {})
+        node_1.send(sync.constants.Method.Create, {})
         system = sync.System.get()
         system.fetch_before_send = True
         message = sync.Message()
-        message.method = sync.Method.Create
+        message.method = sync.constants.Method.Create
         message.payload = {}
         message.origin_id = node_2.id
         message._origin = node_2
@@ -658,10 +658,10 @@ class TestSync():
             message._validate()
 
         message = sync.Message()
-        message.method = sync.Method.Create
+        message.method = sync.constants.Method.Create
         node = sync.Node.create()
         message = sync.Message()
-        message.method = sync.Method.Create
+        message.method = sync.constants.Method.Create
         message.payload = {}
         message.origin_id = node.id
         message._origin = node
@@ -674,27 +674,27 @@ class TestSync():
 
         # Can not update a message until it has been saved.
         with pytest.raises(AssertionError):
-            message.update(sync.State.Processing)
+            message.update(sync.constants.State.Processing)
 
         message.save()
-        message.update(sync.State.Processing)
-        message.update(sync.State.Pending)
+        message.update(sync.constants.State.Processing)
+        message.update(sync.constants.State.Pending)
 
         another = sync.Message()
         another.save()
-        another.update(sync.State.Processing)
+        another.update(sync.constants.State.Processing)
 
         assert len(message.changes()) == 2
 
         with pytest.raises(sync.exceptions.InvalidOperationError):
-            message.update(sync.State.Pending)
+            message.update(sync.constants.State.Pending)
 
     def test_message_acknowledge(self):
         message = sync.Message()
         message.save()
-        message.update(sync.State.Processing)
+        message.update(sync.constants.State.Processing)
         message.acknowledge()
-        assert message.state == sync.State.Acknowledged
+        assert message.state == sync.constants.State.Acknowledged
 
     def test_message_acknowledge_with_remote(self):
         node = sync.Node.create(create=True)
@@ -706,29 +706,29 @@ class TestSync():
 
         message = sync.Message()
         message.save()
-        message.update(sync.State.Processing)
+        message.update(sync.constants.State.Processing)
         message.record_id = record.id
         message.destination_id = node.id
         message.acknowledge('remote_id')
 
         remote = sync.Remote.get(node.id, remote_id='remote_id')
 
-        assert message.state == sync.State.Acknowledged
+        assert message.state == sync.constants.State.Acknowledged
         assert remote.record_id == record.id
 
     def test_message_fail(self):
         message = sync.Message()
         message.save()
-        message.update(sync.State.Processing)
+        message.update(sync.constants.State.Processing)
         message.fail()
-        assert message.state == sync.State.Failed
+        assert message.state == sync.constants.State.Failed
 
     def test_message_fail_with_reason(self):
         message = sync.Message()
         message.save()
-        message.update(sync.State.Processing)
+        message.update(sync.constants.State.Processing)
         message.fail("reason")
-        assert message.state == sync.State.Failed
+        assert message.state == sync.constants.State.Failed
         assert len(message.errors()) == 1
         assert message.errors()[0].text == "reason"
 
@@ -736,28 +736,29 @@ class TestSync():
         node_1 = sync.Node.create()
 
         with pytest.raises(sync.exceptions.InvalidOperationError):
-            message = sync.Message.send(node_1.id, sync.Method.Create,
+            message = sync.Message.send(node_1.id,
+                                        sync.constants.Method.Create,
                                         payload={})
 
         node_1.create = True
         node_1.save()
-        message = sync.Message.send(node_1.id, sync.Method.Create,
+        message = sync.Message.send(node_1.id, sync.constants.Method.Create,
                                     payload={})
-        assert message.state == sync.State.Acknowledged
+        assert message.state == sync.constants.State.Acknowledged
 
     def test_message_fetch(self):
         node_1 = sync.Node.create(create=True)
         node_2 = sync.Node.create(read=True)
 
-        sync.Message.send(node_1.id, sync.Method.Create,
+        sync.Message.send(node_1.id, sync.constants.Method.Create,
                           payload={'foo': 'bar'})
         read = sync.Message.fetch(node_2.id)
         assert read is not None
-        assert read.state == sync.State.Processing
+        assert read.state == sync.constants.State.Processing
         assert sync.Message.fetch(node_2.id) is None
         read.acknowledge()
         read = sync.Message.get(read.id)
-        assert read.state == sync.State.Acknowledged
+        assert read.state == sync.constants.State.Acknowledged
 
     def test_record_validate(self):
         record = sync.Record()
@@ -782,25 +783,25 @@ class TestSync():
         read_nodes = [n2, n3, n4]
 
         # Create
-        message = n1.send(sync.Method.Create, {'foo': 'bar'})
-        assert message.state == sync.State.Acknowledged
+        message = n1.send(sync.constants.Method.Create, {'foo': 'bar'})
+        assert message.state == sync.constants.State.Acknowledged
         assert message.record_id is not None
         for node in read_nodes:
             assert node.fetch() is not None
             assert node.fetch() is None
 
         # Update
-        message = n1.send(sync.Method.Update, {},
+        message = n1.send(sync.constants.Method.Update, {},
                           record_id=message.record_id)
-        assert message.state == sync.State.Acknowledged
+        assert message.state == sync.constants.State.Acknowledged
         for node in read_nodes:
             assert node.fetch() is not None
             assert node.fetch() is None
 
         # Delete
-        message = n1.send(sync.Method.Delete,
+        message = n1.send(sync.constants.Method.Delete,
                           record_id=message.record_id)
-        assert message.state == sync.State.Acknowledged
+        assert message.state == sync.constants.State.Acknowledged
         for node in read_nodes:
             assert node.fetch() is not None
             assert node.fetch() is None
@@ -819,7 +820,7 @@ class TestSync():
         write_nodes = [n1, n2, n3]
 
         for node in write_nodes:
-            node.send(sync.Method.Create, {'foo': 'bar'})
+            node.send(sync.constants.Method.Create, {'foo': 'bar'})
 
         reads = []
         while True:
@@ -845,7 +846,7 @@ class TestSync():
         nodes = [n1, n2, n3, n4]
 
         for node in nodes:
-            node.send(sync.Method.Create, {'foo': 'bar'})
+            node.send(sync.constants.Method.Create, {'foo': 'bar'})
 
         for node in nodes:
             reads = []
@@ -875,10 +876,10 @@ class TestSync():
             item = self.data[i]
 
             if i < round(len(self.data) / 2):
-                n1.send(sync.Method.Create, item)
+                n1.send(sync.constants.Method.Create, item)
                 n1_records.append(item)
             else:
-                n2.send(sync.Method.Create, item)
+                n2.send(sync.constants.Method.Create, item)
                 n2_records.append(item)
 
         # Fetch available data for each node.
@@ -916,19 +917,20 @@ class TestSync():
         n2 = sync.Node.create(create=True, read=True, update=True,
                               delete=True)
 
-        n1.send(sync.Method.Create, {'foo': 'bar'}, remote_id='abc')
+        n1.send(sync.constants.Method.Create, {'foo': 'bar'}, remote_id='abc')
         message = n2.fetch()
         n2.acknowledge(message.id, "foo")
 
-        n1.send(sync.Method.Create, {'foo': 'bar'}, remote_id='def')
+        n1.send(sync.constants.Method.Create, {'foo': 'bar'}, remote_id='def')
         message = n2.fetch()
         with pytest.raises(exceptions.InvalidOperationError):
             n2.acknowledge(message.id, "foo")
 
-        n2.send(sync.Method.Create, {'foo': 'bar'}, remote_id='123')
+        n2.send(sync.constants.Method.Create, {'foo': 'bar'}, remote_id='123')
 
         with pytest.raises(exceptions.InvalidOperationError):
-            n2.send(sync.Method.Create, {'foo': 'bar'}, remote_id='123')
+            n2.send(sync.constants.Method.Create, {'foo': 'bar'},
+                    remote_id='123')
 
     def test_node__get_message(self):
         node = sync.Node.create(create=True, read=True, update=True,
@@ -940,9 +942,9 @@ class TestSync():
         node = sync.Node.create(create=True, read=True, update=True,
                                 delete=True)
         with pytest.raises(exceptions.InvalidOperationError):
-            node.send(sync.Method.Read)
+            node.send(sync.constants.Method.Read)
         with pytest.raises(exceptions.InvalidOperationError):
-            node.send(sync.Method.Create, record_id='not none')
+            node.send(sync.constants.Method.Create, record_id='not none')
 
     def test_message_get_history_empty(self):
         message = sync.Message()
@@ -955,7 +957,7 @@ class TestSync():
         original = sync.Message._execute
         sync.Message._execute = error_fun
         with pytest.raises(MockError):
-            node.send(sync.Method.Create, {})
+            node.send(sync.constants.Method.Create, {})
         sync.Message._execute = original
 
     def test_message_fetch_raise_errors(self):
@@ -963,7 +965,7 @@ class TestSync():
                               delete=True)
         n2 = sync.Node.create(create=True, read=True, update=True,
                               delete=True)
-        n1.send(sync.Method.Create, {'foo': 'bar'}, remote_id='abc')
+        n1.send(sync.constants.Method.Create, {'foo': 'bar'}, remote_id='abc')
         original = sync.Message.update
         sync.Message.update = error_fun
         with pytest.raises(MockError):
