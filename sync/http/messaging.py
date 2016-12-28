@@ -4,7 +4,8 @@ import falcon
 
 import sync
 
-from sync.http import schema, utils
+from sync import schema
+from sync.http import utils
 from sync.storage import init_storage
 
 
@@ -31,7 +32,7 @@ class MessageList:
     def on_post(self, req, resp, node):
         json_data = req.stream.read()
         data = utils.inflate(json_data, utils.PostData,
-                             schema.message_post)
+                             schema.message_create)
         method = data.method
         payload = data.payload
         record_id = getattr(data, 'record_id', None)
@@ -73,7 +74,7 @@ class Message:
     def on_patch(self, req, resp, message_id, node):
         utils.obj_or_404(node)
         json_data = req.stream.read()
-        data = utils.inflate(json_data, utils.PostData, schema.message_patch)
+        data = utils.inflate(json_data, utils.PostData, schema.message_update)
         if data.success:
             remote_id = getattr(data, 'remote_id', None)
             message = node.acknowledge(message_id, remote_id)

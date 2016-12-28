@@ -4,7 +4,8 @@ import falcon
 
 import sync
 
-from sync.http import schema, utils
+from sync import schema
+from sync.http import utils
 from sync.storage import init_storage
 
 
@@ -18,7 +19,7 @@ class SystemList:
         system_id = sync.generate_id()
         init_storage(system_id, create_db=True)
         json_data = req.stream.read()
-        system = utils.inflate(json_data, sync.System(), schema.system_post)
+        system = utils.inflate(json_data, sync.System(), schema.system_create)
         system.save()
         system = system.as_dict(with_id=True)
         nodes = sync.Node.get()
@@ -40,7 +41,7 @@ class System:
         init(system_id)
         system = sync.System.get()
         json_data = req.stream.read()
-        system = utils.inflate(json_data, system, schema.system_patch)
+        system = utils.inflate(json_data, system, schema.system_update)
         system.save()
         system = sync.System.get().as_dict(with_id=True)
         jsonschema.validators.Draft4Validator(
@@ -53,14 +54,15 @@ class NodeList:
     def on_get(self, req, resp, system_id):
         init(system_id)
         nodes = sync.Node.get()
+        result = [n.as_dict(with_id=True) for n in nodes]
         jsonschema.validators.Draft4Validator(
-            schema.node_list_get).validate(nodes)
+            schema.nodes_get).validate(result)
         resp.body = utils.json.dumps(nodes, default=utils.json_serial)
 
     def on_post(self, req, resp, system_id):
         init(system_id)
         json_data = req.stream.read()
-        node = utils.inflate(json_data, sync.Node(), schema.node_post)
+        node = utils.inflate(json_data, sync.Node(), schema.node_create)
         node.save()
         node = node.as_dict(with_id=True)
         jsonschema.validators.Draft4Validator(

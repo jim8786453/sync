@@ -28,20 +28,17 @@ Sync can use PostgreSQL or MongoDB as its database. It also provides a mock (in-
 To run the full suite of tests use Tox from the root project directory:
 
 ```
-&> tox
+&> make test
 ```
 
 To run a Sync server from source use the following command from the root project directory:
 
 ```
-&> make dev-server
+&> make server
 ```
 
 To build the documentation source:
 
 ```
-&> cd docs && sphinx-apidoc -f -o source/ ../sync
+&> make docs
 ```
-
-## Project roadmap
-TODO

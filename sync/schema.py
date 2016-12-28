@@ -1,4 +1,7 @@
 
+#
+# Misc Schemas
+
 json_schema = {
     "id": "http://json-schema.org/draft-04/schema#",
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -163,6 +166,28 @@ json_schema = {
     },
 }
 
+#
+# System schemas
+
+system_create = {
+    "$schema": "http://json-schema.org/draft-04/schema#system_create",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "fetch_before_send": {
+            "type": "boolean"
+        },
+        "schema": json_schema
+    },
+    "required": [
+        "name",
+        "fetch_before_send",
+        "schema"
+    ]
+}
+
 system_get = {
     "$schema": "http://json-schema.org/draft-04/schema#system_get",
     "type": "object",
@@ -186,27 +211,8 @@ system_get = {
     ]
 }
 
-system_post = {
-    "$schema": "http://json-schema.org/draft-04/schema#system_post",
-    "type": "object",
-    "properties": {
-        "name": {
-            "type": "string"
-        },
-        "fetch_before_send": {
-            "type": "boolean"
-        },
-        "schema": json_schema
-    },
-    "required": [
-        "name",
-        "fetch_before_send",
-        "schema"
-    ]
-}
-
-system_patch = {
-    "$schema": "http://json-schema.org/draft-04/schema#system_patch",
+system_update = {
+    "$schema": "http://json-schema.org/draft-04/schema#system_update",
     "type": "object",
     "properties": {
         "name": {
@@ -217,6 +223,38 @@ system_patch = {
         },
         "schema": json_schema
     }
+}
+
+#
+# Node schemas
+
+node_create = {
+    "$schema": "http://json-schema.org/draft-04/schema#node_create",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "create": {
+            "type": "boolean"
+        },
+        "read": {
+            "type": "boolean"
+        },
+        "update": {
+            "type": "boolean"
+        },
+        "delete": {
+            "type": "boolean"
+        },
+    },
+    "required": [
+        "name",
+        "create",
+        "read",
+        "update",
+        "delete"
+    ]
 }
 
 node_get = {
@@ -252,37 +290,44 @@ node_get = {
     ]
 }
 
-node_post = {
-    "$schema": "http://json-schema.org/draft-04/schema#node_post",
-    "type": "object",
-    "properties": {
-        "name": {
-            "type": "string"
+nodes_get = {
+    "$schema": "http://json-schema.org/draft-04/schema#nodes_get",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string"
+            },
+            "id": {
+                "type": "string"
+            },
+            "create": {
+                "type": "boolean"
+            },
+            "read": {
+                "type": "boolean"
+            },
+            "update": {
+                "type": "boolean"
+            },
+            "delete": {
+                "type": "boolean"q
+            },
         },
-        "create": {
-            "type": "boolean"
-        },
-        "read": {
-            "type": "boolean"
-        },
-        "update": {
-            "type": "boolean"
-        },
-        "delete": {
-            "type": "boolean"
-        },
-    },
-    "required": [
-        "name",
-        "create",
-        "read",
-        "update",
-        "delete"
-    ]
+        "required": [
+            "name",
+            "id",
+            "create",
+            "read",
+            "update",
+            "delete"
+        ]
+    }
 }
 
-node_patch = {
-    "$schema": "http://json-schema.org/draft-04/schema#node_patch",
+node_update = {
+    "$schema": "http://json-schema.org/draft-04/schema#node_update",
     "type": "object",
     "properties": {
         "name": {
@@ -309,18 +354,11 @@ node_patch = {
     ]
 }
 
-node_list_get = {
-    "$schema": "http://json-schema.org/draft-04/schema#node_list_get",
-    "type": "array"
-}
+#
+# Message schemas
 
-message_pending_get = {
-    "$schema": "http://json-schema.org/draft-04/schema#node_send",
-    "type": "boolean"
-}
-
-message_post = {
-    "$schema": "http://json-schema.org/draft-04/schema#node_send",
+message_create = {
+    "$schema": "http://json-schema.org/draft-04/schema#message_create",
     "type": "object",
     "properties": {
         "method": {
@@ -338,25 +376,6 @@ message_post = {
     },
     "required": [
         "method"
-    ]
-}
-
-message_patch = {
-    "$schema": "http://json-schema.org/draft-04/schema#node_ack",
-    "type": "object",
-    "properties": {
-        "success": {
-            "type": "boolean"
-        },
-        "remote_id": {
-            "type": "string"
-        },
-        "reason": {
-            "type": "string"
-        },
-    },
-    "required": [
-        "success"
     ]
 }
 
@@ -403,4 +422,28 @@ message_get = {
     "payload",
     "method"
   ]
+}
+
+message_update = {
+    "$schema": "http://json-schema.org/draft-04/schema#message_update",
+    "type": "object",
+    "properties": {
+        "success": {
+            "type": "boolean"
+        },
+        "remote_id": {
+            "type": "string"
+        },
+        "reason": {
+            "type": "string"
+        },
+    },
+    "required": [
+        "success"
+    ]
+}
+
+message_pending_get = {
+    "$schema": "http://json-schema.org/draft-04/schema#message_pending_get",
+    "type": "boolean"
 }
