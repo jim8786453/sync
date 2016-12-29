@@ -1,5 +1,5 @@
 
-from sync.constants import Text
+from sync import Text
 
 
 class SyncError(Exception):

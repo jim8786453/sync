@@ -5,8 +5,7 @@ import six
 import uuid
 
 
-from sync import exceptions, tasks
-from sync.constants import Method, State, Text, Type
+from sync import exceptions, tasks, Method, State, Text, Type
 
 
 """The global storage object.
@@ -493,33 +492,45 @@ class Message(Base):
 
     def _validate(self):
         """Validate that the message is in a state that can be processed."""
+        # Parent message can be found.
         if self.parent_id is not None and self._parent is None:
             raise exceptions.NotFoundError(Type.Message, self.parent_id)
 
+        # Origin node can be found.
         if self.origin_id is not None and self._origin is None:
             raise exceptions.NotFoundError(Type.Node, self.origin_id)
 
+        # Destination node can be found.
         if self.destination_id is not None and self._destination is None:
             raise exceptions.NotFoundError(Type.Node, self.destination_id)
 
+        # Create and Update methods require a payload.
         if self.method in (Method.Create, Method.Update) \
            and self.payload is None:
             raise exceptions.InvalidOperationError(Text.MissingPayload)
 
+        # Existing record has been found if not creating.
         if self.method != Method.Create and self._record is None:
             raise exceptions.InvalidOperationError(Text.RecordNotFound)
 
+        # Record does not exist if creating.
         if self.origin_id is not None and self.method == Method.Create \
            and self._record is not None:
             raise exceptions.InvalidOperationError(Text.RecordExists)
 
+        # Origin node does not have pending messages.
         if self._network.fetch_before_send and self._origin and \
            s.get_message(destination_id=self.origin_id) is not None:
             raise exceptions.InvalidOperationError(Text.NodeHasPendingMessages)
 
+        # Node has permission to carry out the operation.
         if self._origin and not self._origin.check(self.method):
             text = Text.NodeMissingPermission.format(self.method)
             raise exceptions.InvalidOperationError(text)
+
+        # Deny updates to deleted records.
+        if self._record is not None and self._record.deleted:
+            raise exceptions.InvalidOperationError(Text.RecordDeleted)
 
     def save(self):
         """Save the object using the global sync.Storage object."""

@@ -11,7 +11,7 @@ from sqlalchemy_utils import database_exists, create_database, drop_database
 import sync
 
 from sync import settings
-from sync.constants import Text
+from sync import Text
 from sync.exceptions import DatabaseNotFoundError
 
 
@@ -167,7 +167,7 @@ class Storage(object):
         raise NotImplementedError
 
     def get_message(self, message_id=None, destination_id=None,
-                    state=sync.constants.State.Pending,
+                    state=sync.State.Pending,
                     with_for_update=False):
         """Fetch a message object based on the keyword args.
 
@@ -337,7 +337,7 @@ class MockStorage(Storage):
         return results
 
     def get_message(self, message_id=None, destination_id=None,
-                    state=sync.constants.State.Pending, with_for_update=False):
+                    state=sync.State.Pending, with_for_update=False):
         if message_id is not None:
             return self.messages.get(message_id, None)
 
@@ -384,7 +384,7 @@ class MockStorage(Storage):
 
     def update_messages(self, node_id, record_id, remote_id):
         for message in self.messages.values():
-            if message.state == sync.constants.State.Pending \
+            if message.state == sync.State.Pending \
                and message.destination_id == node_id \
                and message.record_id == record_id:
                 message.remote_id = remote_id
@@ -704,7 +704,7 @@ class PostgresStorage(Storage):
         return self._get_one(query, sync.Node)
 
     def get_message(self, message_id=None, destination_id=None,
-                    state=sync.constants.State.Pending,
+                    state=sync.State.Pending,
                     with_for_update=False):
         table = self.message_table
         query = table.select()
@@ -993,7 +993,7 @@ class MongoStorage(Storage):
         return self._get_one('nodes', filter_, sync.Node)
 
     def get_message(self, message_id=None, destination_id=None,
-                    state=sync.constants.State.Pending,
+                    state=sync.State.Pending,
                     with_for_update=False):
         filter_ = {}
 

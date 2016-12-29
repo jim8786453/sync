@@ -9,7 +9,7 @@ import sync
 
 from sync import exceptions
 from sync.conftest import postgresql
-from sync.constants import Backend
+from sync import Backend
 from sync.http import errors, server, utils
 
 
