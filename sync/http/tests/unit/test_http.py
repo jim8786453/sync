@@ -261,7 +261,7 @@ class TestHttp():
         # Node 2. Check if it has pending messages.
         url = '/messages/pending'
         result = self.client.simulate_get(url, headers=self.node_2_headers)
-        assert result.json is False
+        assert result.json == 0
 
         # Node 1. Send a message.
         url = '/messages'
@@ -281,7 +281,27 @@ class TestHttp():
         # Node 2. Check if it has pending messages.
         url = '/messages/pending'
         result = self.client.simulate_get(url, headers=self.node_2_headers)
-        assert result.json is True
+        assert result.json == 1
+
+        # Node 1. Send a message.
+        url = '/messages'
+        body = {
+            'method': 'create',
+            'payload': {
+                'firstName': 'test',
+                'lastName': 'test'
+            },
+            'remote_id': '0002'
+        }
+        body_json = json.dumps(body)
+        result = self.client.simulate_post(url, body=body_json,
+                                           headers=self.node_1_headers)
+        assert result.status_code == 200
+
+        # Node 2. Check if it has pending messages.
+        url = '/messages/pending'
+        result = self.client.simulate_get(url, headers=self.node_2_headers)
+        assert result.json == 2
 
     def test_http_message_send_and_ack(self, request):
         self.setup_network()

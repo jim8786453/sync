@@ -279,16 +279,13 @@ class Node(Base):
         return Message.fetch(self.id)
 
     def has_pending(self):
-        """Does the node have pending messages.
+        """The number of pending messages for the node.
 
-        :returns: True if the node has pending messages.
-        :rtype: bool
+        :returns: The count of pending messages.
+        :rtype: integer
         """
-        message = s.get_message(destination_id=self.id)
-        if message is None:
-            return False
-        else:
-            return True
+        count = s.get_message_count(destination_id=self.id)
+        return count
 
     def acknowledge(self, message_id, remote_id=None):
         """Acknowledge a message.

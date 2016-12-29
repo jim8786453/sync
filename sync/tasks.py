@@ -2,6 +2,7 @@ from multiprocessing import Process
 
 import sync
 
+from sync.settings import STORAGE_CLASS
 from sync.storage import init_storage
 
 
@@ -14,6 +15,10 @@ def run(fun, args):
     :type args: tuple
 
     """
+    if STORAGE_CLASS == 'MockStorage':
+        # In memory storage can not be shared between processes.
+        fun(*args)
+        return
     p = Process(target=fun, args=args)
     p.start()
 
@@ -23,6 +28,10 @@ def _call_close():
     this is mocked.
 
     """
+    if STORAGE_CLASS == 'MockStorage':
+        # Do not need to close as a new process was not spawned during
+        # run.
+        return
     sync.close()
 
 

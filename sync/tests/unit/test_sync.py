@@ -377,11 +377,11 @@ class TestSync():
                               delete=True)
         n2 = sync.Node.create(create=True, read=True, update=True,
                               delete=True)
-        assert n2.has_pending() is False
+        assert n2.has_pending() == 0
         n1.send(sync.Method.Create, {'foo': 'bar'})
-        assert n2.has_pending() is True
+        assert n2.has_pending() == 1
         n2.fetch()
-        assert n2.has_pending() is False
+        assert n2.has_pending() == 0
 
     def test_node_fetch_ack(self):
         sender = sync.Node.create(create=True)
@@ -1028,6 +1028,8 @@ class TestBaseStorage():
             storage.get_remote(None)
         with pytest.raises(NotImplementedError):
             storage.get_message()
+        with pytest.raises(NotImplementedError):
+            storage.get_message_count()
         with pytest.raises(NotImplementedError):
             storage.get_nodes()
         with pytest.raises(NotImplementedError):

@@ -445,5 +445,5 @@ message_update = {
 
 message_pending_get = {
     "$schema": "http://json-schema.org/draft-04/schema#message_pending_get",
-    "type": "boolean"
+    "type": "integer"
 }

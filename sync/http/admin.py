@@ -19,11 +19,10 @@ class NetworkList:
         network_id = sync.generate_id()
         init_storage(network_id, create_db=True)
         json_data = req.stream.read()
-        network = utils.inflate(json_data, sync.Network(), schema.network_create)
+        network = utils.inflate(json_data, sync.Network(),
+                                schema.network_create)
         network.save()
         network = network.as_dict(with_id=True)
-        nodes = sync.Node.get()
-        network['nodes'] = nodes
         resp.body = json.dumps(network, default=utils.json_serial)
         resp.status = falcon.HTTP_201
 

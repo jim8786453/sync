@@ -182,6 +182,17 @@ class Storage(object):
         """
         raise NotImplementedError
 
+    def get_message_count(self, destination_id=None, state=sync.State.Pending):
+        """Fetch a count of messages.
+
+        :param destination_id: The destination node id of the message.
+        :param state: The current state of the node.
+        :returns: The number of messages
+        :rtype: integer
+
+        """
+        raise NotImplementedError
+
     def get_nodes(self):
         """Fetch all node objects in the network.
 
@@ -348,6 +359,15 @@ class MockStorage(Storage):
                     return message
 
         return None
+
+    def get_message_count(self, destination_id=None, state=sync.State.Pending):
+        result = 0
+        for message in self.messages.values():
+            if message.state == state and \
+               message.destination_id == destination_id:
+                    result = result + 1
+
+        return result
 
     def get_nodes(self):
         return list(self.nodes.values())
@@ -720,6 +740,17 @@ class PostgresStorage(Storage):
 
         return self._get_one(query, sync.Message, with_for_update)
 
+    def get_message_count(self, destination_id=None, state=sync.State.Pending):
+        table = self.message_table
+        query = table.select()
+
+        query = query.where(sqla.and_(
+            table.c.state == state,
+            table.c.destination_id == destination_id))
+
+        rows = self.connection.execute(query)
+        return rows.rowcount
+
     def get_record(self, record_id):
         table = self.record_table
         query = table.select()
@@ -1006,6 +1037,13 @@ class MongoStorage(Storage):
         sort = [('timestamp', 1)]
 
         return self._get_one('messages', filter_, sync.Message, sort)
+
+    def get_message_count(self, destination_id=None, state=sync.State.Pending):
+        filter_ = {}
+        filter_['state'] = state
+        filter_['destination_id'] = destination_id
+        count = self.session['messages'].find(filter_).count()
+        return count
 
     def get_record(self, record_id):
         filter_ = {
