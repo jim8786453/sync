@@ -1,5 +1,5 @@
 
-"""Import everything that defines up the top level API.
+"""Import everything that defines the top level API.
 
 """
 from sync.core import (close, current_storage, generate_id, init, validate_id,
