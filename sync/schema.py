@@ -1,6 +1,6 @@
 
 #
-# Misc Schemas
+# Misc schema
 
 json_schema = {
     "id": "http://json-schema.org/draft-04/schema#",
@@ -167,7 +167,7 @@ json_schema = {
 }
 
 #
-# Network schemas
+# Network schema
 
 network_create = {
     "$schema": "http://json-schema.org/draft-04/schema#network_create",
@@ -226,7 +226,7 @@ network_update = {
 }
 
 #
-# Node schemas
+# Node schema
 
 node_create = {
     "$schema": "http://json-schema.org/draft-04/schema#node_create",
@@ -355,7 +355,7 @@ node_update = {
 }
 
 #
-# Message schemas
+# Message schema
 
 message_create = {
     "$schema": "http://json-schema.org/draft-04/schema#message_create",
