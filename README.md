@@ -12,7 +12,7 @@ For example, a poor but commonly used method of synchronising records of data be
 
 Currently Sync is work in progress and is not ready for production use out of the box.
 
-The [documentation](http://py-sync.readthedocs.io/en/latest/?) is currently built and hosted on Read The Docs.
+The [documentation](http://py-sync.readthedocs.io/en/latest/?) is hosted on Read The Docs.
 
 ## Admin API
 The admin API is used to manage and inspect Sync networks and nodes. For more information see the [documentation](http://py-sync.readthedocs.io/en/latest/sync.http.html#module-sync.http.admin).
