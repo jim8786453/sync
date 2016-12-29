@@ -15,10 +15,10 @@ Currently Sync is work in progress and is not ready for production use out of th
 The [documentation](http://py-sync.readthedocs.io/en/latest/?) is currently built and hosted on Read The Docs.
 
 ## Admin API
-TODO
+The admin API is used to manage and inspect Sync networks and nodes. For more information see the [documtation](http://py-sync.readthedocs.io/en/latest/sync.http.html#module-sync.http.admin).
 
 ## Messaging API
-TODO
+The messaging API is used by nodes to send and receive messages. For more information see the [documtation](http://py-sync.readthedocs.io/en/latest/sync.http.html#module-sync.http.messaging).
 
 ## Database support
 Sync can use PostgreSQL or MongoDB as its database. It also provides a mock (in-memory) storage backend used for development and testing. Some features will only be available if the underlying database supports them, for example PostgreSQL transactions.
