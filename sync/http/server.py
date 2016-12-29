@@ -11,11 +11,11 @@ api = falcon.API(middleware=[
 
 
 # Admin API.
-api.add_route('/systems', admin.SystemList())
-api.add_route('/systems/{system_id}', admin.System())
-api.add_route('/systems/{system_id}/nodes', admin.NodeList())
-api.add_route('/systems/{system_id}/nodes/{node_id}', admin.Node())
-api.add_route('/systems/{system_id}/nodes/{node_id}/sync', admin.NodeSync())
+api.add_route('/networks', admin.NetworkList())
+api.add_route('/networks/{network_id}', admin.Network())
+api.add_route('/networks/{network_id}/nodes', admin.NodeList())
+api.add_route('/networks/{network_id}/nodes/{node_id}', admin.Node())
+api.add_route('/networks/{network_id}/nodes/{node_id}/sync', admin.NodeSync())
 
 
 # Message API.

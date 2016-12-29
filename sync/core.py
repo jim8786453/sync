@@ -140,8 +140,8 @@ class Base(object):
         return result
 
 
-class System(Base):
-    """Holds the configuration and settings for the sync system. Only one
+class Network(Base):
+    """Holds the configuration and settings for the sync network. Only one
     instance of this class is in use at any one time.
 
     """
@@ -161,19 +161,19 @@ class System(Base):
     def save(self):
         """Save the object using the global sync.Storage object."""
         s.start_transaction()
-        s.save_system(self)
+        s.save_network(self)
         s.commit()
 
     @staticmethod
     def get():
         """Fetch the object using the global sync.Storage object."""
-        return s.get_system()
+        return s.get_network()
 
     @staticmethod
     def init(name, schema, fetch_before_send=True):
-        """Upserts the system.
+        """Upserts the network.
 
-        :param name: Friendly name for the sync system.
+        :param name: Friendly name for the sync network.
         :type name: str
         :param schema: JSON schema definition used to validate record
             data.
@@ -181,22 +181,22 @@ class System(Base):
         :param fetch_before_send: Determines whether nodes must fetch
             all pending messages before they may send a message.
         :type fetch_before_send: bool
-        :returns: Instantiated system object.
-        :rtype: sync.System
+        :returns: Instantiated network object.
+        :rtype: sync.Network
 
         """
-        system = s.get_system()
-        if system is None:
-            system = System()
-        system.name = name
-        system.schema = schema
-        system.fetch_before_send = fetch_before_send
-        system.save()
-        return system
+        network = s.get_network()
+        if network is None:
+            network = Network()
+        network.name = name
+        network.schema = schema
+        network.fetch_before_send = fetch_before_send
+        network.save()
+        return network
 
 
 class Node(Base):
-    """Nodes are external systems that want to sync data.
+    """Nodes are external networks that want to sync data.
 
     """
 
@@ -243,7 +243,7 @@ class Node(Base):
 
         This method sends a message with the messages origin set to
         the current node. The message destination is set to None
-        indicating this message will be processed by the sync system.
+        indicating this message will be processed by the sync network.
 
         :param method: Create, update or delete.
         :type method: sync.constants.Method
@@ -439,7 +439,7 @@ class Message(Base):
         self.state = State.Pending
 
         # Cache commonly required objects.
-        self._system = None
+        self._network = None
         self._parent = None
         self._origin = None
         self._destination = None
@@ -472,7 +472,7 @@ class Message(Base):
 
     def _inflate(self):
         """Fetch objects related to this message."""
-        self._system = s.get_system()
+        self._network = s.get_network()
         self._parent = s.get_message(self.parent_id)
         self._origin = s.get_node(self.origin_id)
         self._destination = s.get_node(self.destination_id)
@@ -513,7 +513,7 @@ class Message(Base):
            and self._record is not None:
             raise exceptions.InvalidOperationError(Text.RecordExists)
 
-        if self._system.fetch_before_send and self._origin and \
+        if self._network.fetch_before_send and self._origin and \
            s.get_message(destination_id=self.origin_id) is not None:
             raise exceptions.InvalidOperationError(Text.NodeHasPendingMessages)
 
@@ -796,9 +796,9 @@ class Record(Base):
         if self.deleted and self.head is None:
             return True
 
-        system = s.get_system()
+        network = s.get_network()
         jsonschema.validators.Draft4Validator(
-            system.schema).validate(self.head)
+            network.schema).validate(self.head)
 
         return True
 
@@ -847,7 +847,7 @@ class Remote(Base):
     node itself.
 
     This means that a node can sync data without keeping track or
-    storing the sync systems record ids. Instead it can opt to provide
+    storing the sync networks record ids. Instead it can opt to provide
     it's own unique id for each record.
 
     """

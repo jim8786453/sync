@@ -9,18 +9,18 @@ from sync.http import utils
 from sync.storage import init_storage
 
 
-_HEADER_SYSTEM_ID = 'X-Sync-System-Id'
+_HEADER_NETWORK_ID = 'X-Sync-Network-Id'
 _HEADER_NODE_ID = 'X-Sync-Node-Id'
 
 
 def handle_headers(req, resp, resource, params):
-    system_id = req.get_header(_HEADER_SYSTEM_ID)
+    network_id = req.get_header(_HEADER_NETWORK_ID)
     node_id = req.get_header(_HEADER_NODE_ID)
-    if system_id is None:
-        raise falcon.HTTPMissingHeader(_HEADER_SYSTEM_ID)
+    if network_id is None:
+        raise falcon.HTTPMissingHeader(_HEADER_NETWORK_ID)
     if node_id is None:
         raise falcon.HTTPMissingHeader(_HEADER_NODE_ID)
-    init_storage(system_id, create_db=False)
+    init_storage(network_id, create_db=False)
     node = sync.Node.get(node_id)
     utils.obj_or_404(node)
     params['node'] = node

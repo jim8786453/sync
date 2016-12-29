@@ -38,8 +38,8 @@ class Client(object):
             setattr(obj, key, value)
         return obj
 
-    def create_system(self, name, schema, fetch_before_send=False):
-        path = '/systems'
+    def create_network(self, name, schema, fetch_before_send=False):
+        path = '/networks'
         url = urljoin(self.base_url, path)
         data = {
             'name': name,
@@ -50,8 +50,8 @@ class Client(object):
         response = requests.post(url, data=data)
         return self._parse_response(response)
 
-    def get_system(self, system_id):
-        path = '/systems/' + system_id
+    def get_network(self, network_id):
+        path = '/networks/' + network_id
         url = urljoin(self.base_url, path)
         response = requests.get(url)
         return self._parse_response(response)

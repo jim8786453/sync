@@ -14,7 +14,7 @@ if STORAGE_CLASS is None:
 
 
 """POSTGRES_CONNECTION: if using the PostgresStorage backend a base
-connection string is required. As there is one sync system per
+connection string is required. As there is one sync network per
 database the database name will be appended to this value during
 initialisation.
 

@@ -19,7 +19,7 @@ def session_setup(request):
     request.addfinalizer(fin)
 
 
-def mock_init_storage(system_id, create_db=False):
+def mock_init_storage(network_id, create_db=False):
     """Mock this functionality as unit tests do not run tasks in seperate
     processes so results can more easily be verified.
 

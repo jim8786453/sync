@@ -22,13 +22,13 @@ mock_storage_objects = {}
 test_mongo_client = None
 
 
-def init_storage(system_id, create_db=False):
+def init_storage(network_id, create_db=False):
     """
 
     """
     current_module = sys.modules[__name__]
     storage_class = getattr(current_module, settings.STORAGE_CLASS)
-    storage = storage_class(system_id)
+    storage = storage_class(network_id)
     storage.connect(create_db=create_db)
     sync.init(storage)
 
@@ -48,7 +48,7 @@ class Storage(object):
         raise NotImplementedError
 
     def drop(self):
-        """Delete all data for the current sync system."""
+        """Delete all data for the current sync network."""
         raise NotImplementedError
 
     def start_transaction(self):
@@ -69,11 +69,11 @@ class Storage(object):
         """
         raise NotImplementedError
 
-    def save_system(self, system):
-        """Save a system object to the storage backend.
+    def save_network(self, network):
+        """Save a network object to the storage backend.
 
-        :param system: System object to save
-        :type system: sync.System
+        :param network: Network object to save
+        :type network: sync.Network
         """
         raise NotImplementedError
 
@@ -125,11 +125,11 @@ class Storage(object):
         """
         raise NotImplementedError
 
-    def get_system(self):
-        """Fetch the current sync systems system.
+    def get_network(self):
+        """Fetch the current sync network.
 
         :returns: Sync object
-        :rtype: sync.System
+        :rtype: sync.Network
 
         """
         raise NotImplementedError
@@ -183,7 +183,7 @@ class Storage(object):
         raise NotImplementedError
 
     def get_nodes(self):
-        """Fetch all node objects in the system.
+        """Fetch all node objects in the network.
 
         :returns: An array of nodes.
         :rtype: array
@@ -192,7 +192,7 @@ class Storage(object):
         raise NotImplementedError
 
     def get_records(self):
-        """Fetch all records in the system.
+        """Fetch all records in the network.
 
         :returns: An iterator of record objects.
         :rtype: iterator
@@ -235,10 +235,10 @@ class Storage(object):
 class MockStorage(Storage):
     """Store data in-memory."""
 
-    def __init__(self, system_id):
-        self.id = system_id
+    def __init__(self, network_id):
+        self.id = network_id
 
-        self.system = None
+        self.network = None
         self.nodes = {}
         self.messages = {}
         self.errors = {}
@@ -258,7 +258,7 @@ class MockStorage(Storage):
 
         if self.id in mock_storage_objects:
             obj = mock_storage_objects[self.id]
-            self.system = obj.system
+            self.network = obj.network
             self.nodes = obj.nodes
             self.messages = obj.messages
             self.errors = obj.errors
@@ -283,10 +283,10 @@ class MockStorage(Storage):
     def rollback(self):
         pass
 
-    def save_system(self, system):
-        if system.id is None:
-            system.id = self.id
-        self.system = copy.deepcopy(system)
+    def save_network(self, network):
+        if network.id is None:
+            network.id = self.id
+        self.network = copy.deepcopy(network)
 
     def save_node(self, node):
         self._save(node, self.nodes)
@@ -306,8 +306,8 @@ class MockStorage(Storage):
     def save_remote(self, remote):
         self._save(remote, self.remotes)
 
-    def get_system(self):
-        return self.system
+    def get_network(self):
+        return self.network
 
     def get_node(self, node_id):
         return self.nodes.get(node_id, None)
@@ -393,8 +393,8 @@ class MockStorage(Storage):
 class PostgresStorage(Storage):
     """Store data in a Postgres database using SqlAlchemy."""
 
-    def __init__(self, system_id):
-        self.id = system_id
+    def __init__(self, network_id):
+        self.id = network_id
         self.base_url = None
         self.engine = None
         self.connection = None
@@ -454,8 +454,8 @@ class PostgresStorage(Storage):
         self.metadata = sqla.MetaData(bind=self.engine)
 
     def _setup_schema(self, create_db=False):
-        self.system_table = sqla.Table(
-            "systems", self.metadata,
+        self.network_table = sqla.Table(
+            "networks", self.metadata,
             sqla.Column(
                 "id",
                 postgresql.UUID,
@@ -670,8 +670,8 @@ class PostgresStorage(Storage):
         tran = self.trans.pop(-1)
         tran.rollback()
 
-    def save_system(self, system):
-        self._save(self.system_table, system, self.id)
+    def save_network(self, network):
+        self._save(self.network_table, network, self.id)
 
     def save_node(self, node):
         self._save(self.node_table, node)
@@ -691,10 +691,10 @@ class PostgresStorage(Storage):
     def save_remote(self, remote):
         self._save(self.remote_table, remote)
 
-    def get_system(self):
-        query = sqla.select([self.system_table])
+    def get_network(self):
+        query = sqla.select([self.network_table])
 
-        return self._get_one(query, sync.System)
+        return self._get_one(query, sync.Network)
 
     def get_node(self, node_id):
         table = self.node_table
@@ -849,8 +849,8 @@ class PostgresStorage(Storage):
 class MongoStorage(Storage):
     """Store data in a Mongo database."""
 
-    def __init__(self, system_id):
-        self.id = system_id
+    def __init__(self, network_id):
+        self.id = network_id
         self.session = None
 
     def _get_one(self, table, filter_, class_, sort=None):
@@ -863,7 +863,7 @@ class MongoStorage(Storage):
         for key in record.keys():
             if not key == '_id':
                 setattr(obj, key, record[key])
-            if table == 'systems':
+            if table == 'networks':
                 obj.schema = self._decode_dollar_prefix(obj.schema)
 
         return obj
@@ -918,7 +918,7 @@ class MongoStorage(Storage):
     def _save(self, table, obj, override_id=False):
         values = obj.as_dict(False)
 
-        if table == 'systems':
+        if table == 'networks':
             values['schema'] = self._encode_dollar_prefix(values['schema'])
 
         if not hasattr(obj, 'id') or obj.id is None:
@@ -962,8 +962,8 @@ class MongoStorage(Storage):
     def rollback(self):
         pass
 
-    def save_system(self, system):
-        self._save('systems', system, self.id)
+    def save_network(self, network):
+        self._save('networks', network, self.id)
 
     def save_node(self, node):
         self._save('nodes', node)
@@ -983,8 +983,8 @@ class MongoStorage(Storage):
     def save_remote(self, remote):
         self._save('remotes', remote)
 
-    def get_system(self):
-        return self._get_one('systems', {}, sync.System)
+    def get_network(self):
+        return self._get_one('networks', {}, sync.Network)
 
     def get_node(self, node_id):
         filter_ = {

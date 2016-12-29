@@ -12,7 +12,7 @@ class TestClient():
         self.client = Client('http://sync.test/')
 
     @httpretty.activate
-    def test_client_create_system(self):
+    def test_client_create_network(self):
         mock_response = {
             'name': 'Test',
             'nodes': [],
@@ -20,27 +20,27 @@ class TestClient():
             'fetch_before_send': True,
             'schema': {}
         }
-        url = 'http://sync.test/systems'
+        url = 'http://sync.test/networks'
         httpretty.register_uri(httpretty.POST, url,
                                body=json.dumps(mock_response),
                                content_type='application/json',
                                status=201)
-        system = self.client.create_system('test', {}, True)
-        assert system.id == mock_response['id']
-        assert system.name == mock_response['name']
+        network = self.client.create_network('test', {}, True)
+        assert network.id == mock_response['id']
+        assert network.name == mock_response['name']
 
     @httpretty.activate
-    def test_client_create_system_error(self):
-        url = 'http://sync.test/systems'
+    def test_client_create_network_error(self):
+        url = 'http://sync.test/networks'
         httpretty.register_uri(httpretty.POST, url,
                                body=json.dumps({}),
                                content_type='application/json',
                                status=400)
         with pytest.raises(ClientError):
-            self.client.create_system(None, None, None)
+            self.client.create_network(None, None, None)
 
     @httpretty.activate
-    def test_client_get_system(self):
+    def test_client_get_network(self):
         mock_response = {
             'name': 'Test',
             'nodes': [],
@@ -48,11 +48,11 @@ class TestClient():
             'fetch_before_send': True,
             'schema': {}
         }
-        url = 'http://sync.test/systems/' + mock_response['id']
+        url = 'http://sync.test/networks/' + mock_response['id']
         httpretty.register_uri(httpretty.GET, url,
                                body=json.dumps(mock_response),
                                content_type='application/json',
                                status=200)
-        system = self.client.get_system(mock_response['id'])
-        assert system.id == mock_response['id']
-        assert system.name == mock_response['name']
+        network = self.client.get_network(mock_response['id'])
+        assert network.id == mock_response['id']
+        assert network.name == mock_response['name']

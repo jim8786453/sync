@@ -26,16 +26,16 @@ def _call_close():
     sync.close()
 
 
-def node_sync(system_id, node_id):
+def node_sync(network_id, node_id):
     """Resend all records to a node.
 
-    :param system_id: Unique identifier of the system.
-    :type system_id: str
+    :param network_id: Unique identifier of the network.
+    :type network_id: str
     :param node_id: Unique identifier of the node.
     :type node_id: str
     """
     try:
-        init_storage(system_id, False)
+        init_storage(network_id, False)
 
         node = sync.Node.get(node_id)
         for batch in sync.Record.get_all():
@@ -53,17 +53,17 @@ def node_sync(system_id, node_id):
         _call_close()
 
 
-def message_propagate(system_id, message):
-    """Propagate a message to all the other nodes in the system.
+def message_propagate(network_id, message):
+    """Propagate a message to all the other nodes in the network.
 
-    :param system_id: Unique identifier of the system.
-    :type system_id: str
+    :param network_id: Unique identifier of the network.
+    :type network_id: str
     :param message_id: Unique identifier of the message.
     :type message_id: str
 
     """
     try:
-        init_storage(system_id, False)
+        init_storage(network_id, False)
 
         nodes = sync.Node.get()
 

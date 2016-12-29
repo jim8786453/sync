@@ -167,10 +167,10 @@ json_schema = {
 }
 
 #
-# System schemas
+# Network schemas
 
-system_create = {
-    "$schema": "http://json-schema.org/draft-04/schema#system_create",
+network_create = {
+    "$schema": "http://json-schema.org/draft-04/schema#network_create",
     "type": "object",
     "properties": {
         "name": {
@@ -188,8 +188,8 @@ system_create = {
     ]
 }
 
-system_get = {
-    "$schema": "http://json-schema.org/draft-04/schema#system_get",
+network_get = {
+    "$schema": "http://json-schema.org/draft-04/schema#network_get",
     "type": "object",
     "properties": {
         "name": {
@@ -211,8 +211,8 @@ system_get = {
     ]
 }
 
-system_update = {
-    "$schema": "http://json-schema.org/draft-04/schema#system_update",
+network_update = {
+    "$schema": "http://json-schema.org/draft-04/schema#network_update",
     "type": "object",
     "properties": {
         "name": {

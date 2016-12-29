@@ -8,7 +8,7 @@ class SyncError(Exception):
 
 
 class DatabaseNotFoundError(SyncError):
-    """The database for a system could not be found."""
+    """The database for a network could not be found."""
     pass
 
 

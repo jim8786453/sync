@@ -17,7 +17,7 @@ class Type(object):
 
     """
 
-    System = 'System'
+    Network = 'Network'
     Node = 'Node'
     Message = 'Message'
     Record = 'Record'

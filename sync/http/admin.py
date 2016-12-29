@@ -9,58 +9,58 @@ from sync.http import utils
 from sync.storage import init_storage
 
 
-def init(system_id):
-    init_storage(system_id, create_db=False)
+def init(network_id):
+    init_storage(network_id, create_db=False)
 
 
-class SystemList:
+class NetworkList:
 
     def on_post(self, req, resp):
-        system_id = sync.generate_id()
-        init_storage(system_id, create_db=True)
+        network_id = sync.generate_id()
+        init_storage(network_id, create_db=True)
         json_data = req.stream.read()
-        system = utils.inflate(json_data, sync.System(), schema.system_create)
-        system.save()
-        system = system.as_dict(with_id=True)
+        network = utils.inflate(json_data, sync.Network(), schema.network_create)
+        network.save()
+        network = network.as_dict(with_id=True)
         nodes = sync.Node.get()
-        system['nodes'] = nodes
-        resp.body = json.dumps(system, default=utils.json_serial)
+        network['nodes'] = nodes
+        resp.body = json.dumps(network, default=utils.json_serial)
         resp.status = falcon.HTTP_201
 
 
-class System:
+class Network:
 
-    def on_get(self, req, resp, system_id):
-        init(system_id)
-        system = sync.System.get().as_dict(with_id=True)
+    def on_get(self, req, resp, network_id):
+        init(network_id)
+        network = sync.Network.get().as_dict(with_id=True)
         jsonschema.validators.Draft4Validator(
-            schema.system_get).validate(system)
-        resp.body = json.dumps(system, default=utils.json_serial)
+            schema.network_get).validate(network)
+        resp.body = json.dumps(network, default=utils.json_serial)
 
-    def on_patch(self, req, resp, system_id):
-        init(system_id)
-        system = sync.System.get()
+    def on_patch(self, req, resp, network_id):
+        init(network_id)
+        network = sync.Network.get()
         json_data = req.stream.read()
-        system = utils.inflate(json_data, system, schema.system_update)
-        system.save()
-        system = sync.System.get().as_dict(with_id=True)
+        network = utils.inflate(json_data, network, schema.network_update)
+        network.save()
+        network = sync.Network.get().as_dict(with_id=True)
         jsonschema.validators.Draft4Validator(
-            schema.system_get).validate(system)
-        resp.body = json.dumps(system, default=utils.json_serial)
+            schema.network_get).validate(network)
+        resp.body = json.dumps(network, default=utils.json_serial)
 
 
 class NodeList:
 
-    def on_get(self, req, resp, system_id):
-        init(system_id)
+    def on_get(self, req, resp, network_id):
+        init(network_id)
         nodes = sync.Node.get()
         result = [n.as_dict(with_id=True) for n in nodes]
         jsonschema.validators.Draft4Validator(
             schema.nodes_get).validate(result)
         resp.body = utils.json.dumps(nodes, default=utils.json_serial)
 
-    def on_post(self, req, resp, system_id):
-        init(system_id)
+    def on_post(self, req, resp, network_id):
+        init(network_id)
         json_data = req.stream.read()
         node = utils.inflate(json_data, sync.Node(), schema.node_create)
         node.save()
@@ -73,8 +73,8 @@ class NodeList:
 
 class Node:
 
-    def on_get(self, req, resp, system_id, node_id):
-        init(system_id)
+    def on_get(self, req, resp, network_id, node_id):
+        init(network_id)
         node = sync.Node.get(node_id)
         utils.obj_or_404(node)
         node = node.as_dict(with_id=True)
@@ -85,8 +85,8 @@ class Node:
 
 class NodeSync:
 
-    def on_post(self, req, resp, system_id, node_id):
-        init(system_id)
+    def on_post(self, req, resp, network_id, node_id):
+        init(network_id)
         node = sync.Node.get(node_id)
         utils.obj_or_404(node)
         node.sync()

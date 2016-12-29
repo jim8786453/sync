@@ -11,6 +11,7 @@ from operator import itemgetter
 import sync
 
 from sync import exceptions, storage, tasks
+from sync.core import merge_patch
 from sync.conftest import postgresql
 from sync.storage import Storage
 
@@ -106,7 +107,7 @@ class TestSync():
         self.storage = storage_fun()
 
         sync.init(self.storage)
-        sync.System.init('test', {}, True)
+        sync.Network.init('test', {}, True)
 
         assert sync.current_storage() == self.storage
 
@@ -116,19 +117,19 @@ class TestSync():
 
     @pytest.fixture(autouse=False)
     def test_schema(self, request):
-        system = sync.System.get()
-        system.schema = test_schema()
-        system.save()
+        network = sync.Network.get()
+        network.schema = test_schema()
+        network.save()
         self.data = test_data()
 
     def test_misc_storage_get_remote(self):
         with pytest.raises(exceptions.InvalidOperationError):
             sync.current_storage().get_remote('', None, None)
 
-    def test_system(self):
-        system = sync.System.get()
-        system.name = 'Mock'
-        system.schema = {
+    def test_network(self):
+        network = sync.Network.get()
+        network.name = 'Mock'
+        network.schema = {
             "type": "object",
             "properties": {
                 "name": {
@@ -136,22 +137,22 @@ class TestSync():
                 }
             }
         }
-        system.save()
-        returned = sync.System.get()
-        assert system.id is not None
-        assert system == returned
+        network.save()
+        returned = sync.Network.get()
+        assert network.id is not None
+        assert network == returned
 
-        system.name = 'Update'
-        system.save()
-        assert system != returned
-        returned = sync.System.get()
-        assert system == returned
+        network.name = 'Update'
+        network.save()
+        assert network != returned
+        returned = sync.Network.get()
+        assert network == returned
 
-        system.schema = None
-        system.save()
-        assert system != returned
-        returned = sync.System.get()
-        assert system == returned
+        network.schema = None
+        network.save()
+        assert network != returned
+        returned = sync.Network.get()
+        assert network == returned
 
     def test_node(self):
         node = sync.Node.create('Mock', create=True, read=True,
@@ -277,72 +278,72 @@ class TestSync():
         original = {"a": "b"}
         patch = {"a": "c"}
         result = {"a": "c"}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"a": "b"}
         patch = {"b": "c"}
         result = {"a": "b", "b": "c"}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"a": "b"}
         patch = {"a": None}
         result = {}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"a": "b", "b": "c"}
         patch = {"a": None}
         result = {"b": "c"}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"a": ["b"]}
         patch = {"a": "c"}
         result = {"a": "c"}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"a": "c"}
         patch = {"a": ["b"]}
         result = {"a": ["b"]}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"a": [{"b": "c"}]}
         patch = {"a": [1]}
         result = {"a": [1]}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = ["a", "b"]
         patch = ["c", "d"]
         result = ["c", "d"]
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"a": "b"}
         patch = ["c"]
         result = ["c"]
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"a": "foo"}
         patch = None
         result = None
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"a": "foo"}
         patch = "bar"
         result = "bar"
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {"e": None}
         patch = {"a": 1}
         result = {"e": None, "a": 1}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = [1, 2]
         patch = {"a": "b", "c": None}
         result = {"a": "b"}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
         original = {}
         patch = {"a": {"bb": {"ccc": None}}}
         result = {"a": {"bb": {}}}
-        assert result == sync.merge_patch(original, patch)
+        assert result == merge_patch(original, patch)
 
     def test_base(self):
         em_1 = sync.Base()
@@ -646,14 +647,14 @@ class TestSync():
         node_1 = sync.Node.create(create=True, read=True)
         node_2 = sync.Node.create(create=True, read=True)
         node_1.send(sync.constants.Method.Create, {})
-        system = sync.System.get()
-        system.fetch_before_send = True
+        network = sync.Network.get()
+        network.fetch_before_send = True
         message = sync.Message()
         message.method = sync.constants.Method.Create
         message.payload = {}
         message.origin_id = node_2.id
         message._origin = node_2
-        message._system = system
+        message._network = network
         with pytest.raises(sync.exceptions.InvalidOperationError):
             message._validate()
 
@@ -665,7 +666,7 @@ class TestSync():
         message.payload = {}
         message.origin_id = node.id
         message._origin = node
-        message._system = system
+        message._network = network
         with pytest.raises(sync.exceptions.InvalidOperationError):
             message._validate()
 
@@ -763,9 +764,9 @@ class TestSync():
     def test_record_validate(self):
         record = sync.Record()
 
-        system = sync.System.get()
-        system.schema = {'type': 'string'}
-        system.save()
+        network = sync.Network.get()
+        network.schema = {'type': 'string'}
+        network.save()
 
         record.head = 'I am a string'
         assert record.validate()
@@ -834,9 +835,9 @@ class TestSync():
         assert n3.fetch() is None
 
     def test_sync_multi_write_multi_read(self):
-        system = sync.System.get()
-        system.fetch_before_send = False
-        system.save()
+        network = sync.Network.get()
+        network.fetch_before_send = False
+        network.save()
 
         n1 = sync.Node.create(create=True, read=True)
         n2 = sync.Node.create(create=True, read=True)
@@ -858,9 +859,9 @@ class TestSync():
             assert len(reads) == len(nodes)-1
 
     def test_schema_sync_two_nodes(self, test_schema):
-        system = sync.System.get()
-        system.fetch_before_send = False
-        system.save()
+        network = sync.Network.get()
+        network.fetch_before_send = False
+        network.save()
 
         n1 = sync.Node.create(create=True, read=True, update=True,
                               delete=True)
@@ -995,7 +996,7 @@ class TestBaseStorage():
         with pytest.raises(NotImplementedError):
             storage.rollback()
         with pytest.raises(NotImplementedError):
-            storage.save_system(None)
+            storage.save_network(None)
         with pytest.raises(NotImplementedError):
             storage.save_node(None)
         with pytest.raises(NotImplementedError):
@@ -1009,7 +1010,7 @@ class TestBaseStorage():
         with pytest.raises(NotImplementedError):
             storage.save_remote(None)
         with pytest.raises(NotImplementedError):
-            storage.get_system()
+            storage.get_network()
         with pytest.raises(NotImplementedError):
             storage.get_node(None)
         with pytest.raises(NotImplementedError):

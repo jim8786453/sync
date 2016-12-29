@@ -28,7 +28,7 @@ class TestHttp():
     def client(self):
         self.client = tc(server.api)
 
-    def setup_system(self):
+    def setup_network(self):
         body = {
             'name': 'test',
             'fetch_before_send': True,
@@ -52,8 +52,8 @@ class TestHttp():
             }
         }
         body_json = json.dumps(body)
-        result = self.client.simulate_post('/systems', body=body_json)
-        self.system_id = str(result.json['id'])
+        result = self.client.simulate_post('/networks', body=body_json)
+        self.network_id = str(result.json['id'])
 
     def setup_nodes(self):
         body = {
@@ -64,12 +64,12 @@ class TestHttp():
             'delete': True
         }
         body_json = json.dumps(body)
-        url = '/systems/{0}/nodes'.format(self.system_id)
+        url = '/networks/{0}/nodes'.format(self.network_id)
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 201
         self.node_1 = result.json
         self.node_1_headers = {
-            'X-Sync-System-Id': self.system_id,
+            'X-Sync-Network-Id': self.network_id,
             'X-Sync-Node-Id': str(self.node_1['id'])
         }
 
@@ -85,7 +85,7 @@ class TestHttp():
         assert result.status_code == 201
         self.node_2 = result.json
         self.node_2_headers = {
-            'X-Sync-System-Id': self.system_id,
+            'X-Sync-Network-Id': self.network_id,
             'X-Sync-Node-Id': str(self.node_2['id'])
         }
 
@@ -97,11 +97,11 @@ class TestHttp():
         with pytest.raises(falcon.HTTPNotFound):
             utils.obj_or_404(None)
 
-    def test_http_systems(self, request):
+    def test_http_networks(self, request):
         # POST 400
         body = {}
         body_json = json.dumps(body)
-        url = '/systems'
+        url = '/networks'
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 400
 
@@ -115,16 +115,16 @@ class TestHttp():
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 201
 
-        # system_id is required for GET methods
-        system_id = str(result.json['id'])
+        # network_id is required for GET methods
+        network_id = str(result.json['id'])
 
         # GET 404
-        url = '/systems/foo'
+        url = '/networks/foo'
         result = self.client.simulate_get(url)
         assert result.status_code == 404
 
         # GET 200
-        url = '/systems/{0}'.format(system_id)
+        url = '/networks/{0}'.format(network_id)
         result = self.client.simulate_get(url)
         assert result.status_code == 200
 
@@ -137,7 +137,7 @@ class TestHttp():
         assert result.status_code == 200
 
     def test_http_nodes(self, request):
-        self.setup_system()
+        self.setup_network()
 
         # POST 400 mising name
         body = {
@@ -147,7 +147,7 @@ class TestHttp():
             'delete': True
         }
         body_json = json.dumps(body)
-        url = '/systems/{0}/nodes'.format(self.system_id)
+        url = '/networks/{0}/nodes'.format(self.network_id)
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 400
 
@@ -160,7 +160,7 @@ class TestHttp():
             'delete': True
         }
         body_json = json.dumps(body)
-        url = '/systems/{0}/nodes'.format(self.system_id)
+        url = '/networks/{0}/nodes'.format(self.network_id)
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 201
         node_1_id = result.json['id']
@@ -175,29 +175,29 @@ class TestHttp():
             'delete': True
         }
         body_json = json.dumps(body)
-        url = '/systems/{0}/nodes'.format(self.system_id)
+        url = '/networks/{0}/nodes'.format(self.network_id)
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 201
         node_2_id = result.json['id']
         assert node_2_id is not None
 
         # GET 200
-        url = '/systems/{0}/nodes/'.format(self.system_id)
+        url = '/networks/{0}/nodes/'.format(self.network_id)
         result = self.client.simulate_get(url)
         assert result.status_code == 200
 
         # GET 200
-        url = '/systems/{0}/nodes/{1}'.format(self.system_id, node_1_id)
+        url = '/networks/{0}/nodes/{1}'.format(self.network_id, node_1_id)
         result = self.client.simulate_get(url)
         assert result.status_code == 200
 
         # GET 404
-        url = '/systems/{0}/nodes/foo'.format(self.system_id)
+        url = '/networks/{0}/nodes/foo'.format(self.network_id)
         result = self.client.simulate_get(url)
         assert result.status_code == 404
 
     def test_http_message_list(self, request):
-        self.setup_system()
+        self.setup_network()
         self.setup_nodes()
 
         # POST 200
@@ -224,12 +224,12 @@ class TestHttp():
         assert result.status_code == 200
 
     def test_http_message_headers(self, request):
-        self.setup_system()
+        self.setup_network()
         self.setup_nodes()
 
         url = '/messages/pending'
         headers = {
-            'X-Sync-System-Id': self.system_id
+            'X-Sync-Network-Id': self.network_id
         }
         result = self.client.simulate_get(url, headers=headers)
         assert result.status_code == 400
@@ -241,21 +241,21 @@ class TestHttp():
         assert result.status_code == 400
 
         headers = {
-            'X-Sync-System-Id': 'foo',
+            'X-Sync-Network-Id': 'foo',
             'X-Sync-Node-Id': str(self.node_1['id'])
         }
         result = self.client.simulate_get(url, headers=headers)
         assert result.status_code == 404
 
         headers = {
-            'X-Sync-System-Id': self.system_id,
+            'X-Sync-Network-Id': self.network_id,
             'X-Sync-Node-Id': 'foo'
         }
         result = self.client.simulate_get(url, headers=headers)
         assert result.status_code == 404
 
     def test_http_message_pending(self, request):
-        self.setup_system()
+        self.setup_network()
         self.setup_nodes()
 
         # Node 2. Check if it has pending messages.
@@ -284,7 +284,7 @@ class TestHttp():
         assert result.json is True
 
     def test_http_message_send_and_ack(self, request):
-        self.setup_system()
+        self.setup_network()
         self.setup_nodes()
 
         # POST 200
@@ -350,7 +350,7 @@ class TestHttp():
         assert result.status_code == 200
 
     def test_http_send_with_remote_ids(self, request):
-        self.setup_system()
+        self.setup_network()
         self.setup_nodes()
 
         # Node 1: Create a record and attach a remote id.
@@ -418,7 +418,7 @@ class TestHttp():
         assert result.status_code == 200
 
         # Node 2. Sync the record again.
-        url = '/systems/{0}/nodes/{1}/sync'.format(self.system_id,
+        url = '/networks/{0}/nodes/{1}/sync'.format(self.network_id,
                                                    str(self.node_2['id']))
         result = self.client.simulate_post(url)
         assert result.status_code == 200
