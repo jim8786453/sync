@@ -529,7 +529,7 @@ class Message(Base):
             raise exceptions.InvalidOperationError(text)
 
         # Deny updates to deleted records.
-        if self._record is not None and self._record.deleted:
+        if self._origin and self._record is not None and self._record.deleted:
             raise exceptions.InvalidOperationError(Text.RecordDeleted)
 
     def save(self):
