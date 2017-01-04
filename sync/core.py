@@ -223,10 +223,17 @@ class Node(Base):
         :raises: sync.exceptions.NotFoundError
 
         """
+        if not validate_id(message_id):
+            message = Text.InvalidUUID.format(message_id)
+            raise exceptions.InvalidOperationError(message)
+
         message = Message.get(message_id)
 
         if message is None:
             raise exceptions.NotFoundError(Type.Message, message_id)
+
+        if self.id != message.destination_id:
+            raise exceptions.InvalidOperationError(Text.NodeModifyError)
 
         return message
 

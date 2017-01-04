@@ -408,6 +408,48 @@ class TestSync():
         message = fetcher.acknowledge(fetched.id)
         assert message.state == sync.State.Acknowledged
 
+    def test_node_fetch_ack_another_nodes_message(self):
+        sender = sync.Node.create(create=True)
+        fetcher = sync.Node.create(read=True)
+
+        method = sync.Method.Create
+        payload = {'foo': 'bar'}
+
+        sender.send(method, payload)
+        fetched = fetcher.fetch()
+
+        # Try and ack a message for another node.
+        with pytest.raises(sync.exceptions.InvalidOperationError):
+            sender.acknowledge(fetched.id)
+
+    def test_node_fetch_ack_invalid_message(self):
+        sender = sync.Node.create(create=True)
+
+        # Try and ack a message for another node.
+        with pytest.raises(sync.exceptions.InvalidOperationError):
+            sender.acknowledge('foo')
+
+    def test_node_fetch_ack_unknown_message(self):
+        sender = sync.Node.create(create=True)
+
+        # Try and ack a message for another node.
+        with pytest.raises(sync.exceptions.NotFoundError):
+            sender.acknowledge(sync.generate_id())
+
+    def test_node_fetch_fail_another_nodes_message(self):
+        sender = sync.Node.create(create=True)
+        fetcher = sync.Node.create(read=True)
+
+        method = sync.Method.Create
+        payload = {'foo': 'bar'}
+
+        sender.send(method, payload)
+        fetched = fetcher.fetch()
+
+        # Try and ack a message for another node.
+        with pytest.raises(sync.exceptions.InvalidOperationError):
+            sender.fail(fetched.id)
+
     def test_node_fetch_fail(self):
         sender = sync.Node.create(create=True)
         fetcher = sync.Node.create(read=True)
@@ -946,7 +988,7 @@ class TestSync():
         node = sync.Node.create(create=True, read=True, update=True,
                                 delete=True)
         with pytest.raises(exceptions.NotFoundError):
-            node._get_message('000000000000-0000-0000-000000000000')
+            node._get_message(sync.generate_id())
 
     def test_node_send_errors(self):
         node = sync.Node.create(create=True, read=True, update=True,

@@ -61,10 +61,12 @@ class Text(object):
     NodeMissingPermission = 'Node does not have permission to {0}'
     NodeSendReadInvalid = 'Nodes may not send Read messages, only fetch them'
     NodeSendCreateInvalid = 'Nodes may not supply a record_id parameter when using the Create method'  # noqa
+    NodeModifyError = 'Node not permitted to modify message'
     NotFound = '{0} object with id:{0} not found'
     RecordNotFound = 'Expected record not found'
     RecordDeleted = 'Can not make changes to a deleted record'
-    RemoteOrRecordRequired = 'Either a remote_id or record_id is required.'
+    RemoteOrRecordRequired = 'Either a remote_id or record_id is required'
     RemoteInUse = 'remote_id already in use: {0}'
     RecordExists = 'Create failed as record already exists'
     UnknownStorage = 'Unknown storage class: {0}'
+    InvalidUUID = 'Invalid UUID: {0}'
