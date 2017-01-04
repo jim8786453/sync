@@ -97,6 +97,8 @@ def test_close_none_storage():
 @pytest.mark.noautouse
 def test_tasks_call_close():
     tasks._call_close()
+    sync.settings.STORAGE_CLASS = 'MockStorage'
+    tasks._call_close()
 
 
 @pytest.mark.parametrize('storage_fun', STORAGE_GENERATORS)
