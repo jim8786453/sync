@@ -70,3 +70,5 @@ class Text(object):
     RecordExists = 'Create failed as record already exists'
     UnknownStorage = 'Unknown storage class: {0}'
     InvalidUUID = 'Invalid UUID: {0}'
+    MessageProcessingFailed = 'Message processing failed'
+    MessageSendFailed = 'Message send failed'

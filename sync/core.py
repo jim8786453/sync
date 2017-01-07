@@ -5,13 +5,15 @@ import six
 import uuid
 
 
-from sync import exceptions, tasks, Method, State, Text, Type
+from sync import exceptions, logs, tasks, Method, State, Text, Type
 
 
-"""The global storage object.
-
-"""
+# The global storage object.
 s = None
+
+
+# Setup a module level logger.
+logger = logs.get_logger(__name__)
 
 
 def init(storage):
@@ -687,6 +689,7 @@ class Message(Base):
             s.commit()
         except Exception:
             s.rollback()
+            logger.error(Text.MessageSendFailed, exc_info=True)
 
             raise
 
@@ -708,6 +711,7 @@ class Message(Base):
             s.start_transaction()
             message.update(State.Failed)
             s.commit()
+            logger.error(Text.MessageProcessingFailed, exc_info=True)
 
             raise
 
