@@ -39,9 +39,7 @@ class Client(object):
     def _parse_response(self, response, class_):
         self._check_response(response)
         data = json.loads(response.text)
-        if data is None:
-            return None
-        elif isinstance(data, list):
+        if isinstance(data, list):
             result = []
             for item in data:
                 obj = self._inflate_object(item, class_)

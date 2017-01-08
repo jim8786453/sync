@@ -128,7 +128,10 @@ class TestClient():
                                body=json.dumps(mock_response),
                                content_type='application/json',
                                status=200)
-        node = self.client.update_node(network_id, node_id, name='test')
+        node = self.client.update_node(network_id, node_id,
+                                       name='test', create=True,
+                                       read=True, update=True,
+                                       delete=True)
         assert node.id == mock_response['id']
         assert node.name == mock_response['name']
 
