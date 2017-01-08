@@ -23,6 +23,8 @@ class NetworkList:
                                 schema.network_create)
         network.save()
         network = network.as_dict(with_id=True)
+        jsonschema.validators.Draft4Validator(
+            schema.network_get).validate(network)
         resp.body = json.dumps(network, default=utils.json_serial)
         resp.status = falcon.HTTP_201
 
