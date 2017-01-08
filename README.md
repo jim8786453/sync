@@ -25,7 +25,7 @@ Sync can use PostgreSQL or MongoDB as its database. It also provides a mock (in-
 
 ## Running Sync
 
-To run the full suite of tests use Tox from the root project directory:
+To run the full suite of tests from the root project directory:
 
 ```
 &> make test
