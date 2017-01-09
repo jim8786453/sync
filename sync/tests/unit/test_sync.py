@@ -410,6 +410,16 @@ class TestSync():
         message = fetcher.acknowledge(fetched.id)
         assert message.state == sync.State.Acknowledged
 
+    def test_node_fetch_ack_with_remote_returns_remote(self):
+        sender = sync.Node.create(create=True)
+        fetcher = sync.Node.create(read=True)
+        method = sync.Method.Create
+        payload = {'foo': 'bar'}
+        sender.send(method, payload)
+        fetched = fetcher.fetch()
+        message = fetcher.acknowledge(fetched.id, 'foo')
+        assert message.remote_id is not None
+
     def test_node_fetch_ack_another_nodes_message(self):
         sender = sync.Node.create(create=True)
         fetcher = sync.Node.create(read=True)

@@ -594,9 +594,10 @@ class Message(Base):
         if self.destination_id is not None and remote_id is not None \
            and self.remote_id != remote_id:
             assert self.record_id is not None
-
             Remote.create(self.destination_id, self.record_id,
                           remote_id)
+            self.remote_id = remote_id
+
         s.commit()
 
     def fail(self, reason=""):
