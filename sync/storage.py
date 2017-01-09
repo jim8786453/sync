@@ -979,10 +979,10 @@ class MongoStorage(Storage):
         self.session = self.client[self.id]
 
     def disconnect(self):
-        pass
+        self.client.close()
 
     def drop(self):
-        pass
+        self.client.drop_database(self.id)
 
     def start_transaction(self):
         pass
