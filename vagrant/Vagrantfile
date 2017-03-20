@@ -6,9 +6,8 @@ Vagrant.require_version '>= 1.5.0'
 
 # Configure using Vagrant's version 2 API/syntax.
 Vagrant.configure(2) do |config|
-  # Ubuntu 14.04, 64 bit
-  config.vm.box         = 'ubuntu/trusty64'
-  config.vm.box_version = '~> 14.04'
+  config.vm.box         = 'ubuntu/xenial64'
+  config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
 
   # Providers
   config.vm.provider "virtualbox" do |v|
@@ -16,44 +15,34 @@ Vagrant.configure(2) do |config|
     v.cpus = 4
   end
 
-  config.ssh.username = 'vagrant'
-  config.vm.network :public_network, bridge: 'en0: Wi-Fi (AirPort)'
-  config.vm.network :forwarded_port, guest: 5432, host: 5432
-  config.vm.synced_folder "../", "/home/vagrant/sync/"
-
-  # Provision Postgres and Emacs
+  # Provision
   config.vm.provision :shell do |sh|
     sh.inline = <<-EOF
       export DEBIAN_FRONTEND=noninteractive;
 
-      sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list';
-      wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add -;
-      apt-get update --assume-yes;
-
-      # Postgresql
-      apt-get update;
-      apt-get -y install postgresql postgresql-contrib git;
-
-      # Mongodb
+      # Additional PPAs
+      sudo add-apt-repository ppa:fkrull/deadsnakes;
       sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6;
-      echo "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list;
+      echo "deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.2.list;
+      sudo add-apt-repository ppa:kelleyk/emacs;
+
+      # Update
       sudo apt-get update --assume-yes;
-      sudo apt-get install -y mongodb-org;
 
-      # Emacs
-      apt-get -y install build-essential;
-      apt-get -y build-dep emacs24;
-      wget http://ftp.gnu.org/gnu/emacs/emacs-24.5.tar.gz;
-      tar -xf emacs-24.5.tar.* && cd emacs-24.5;
-      ./configure;
-      make;
-      sudo make install;
+      # Install OS dependencies
+      sudo apt-get -y  --allow-unauthenticated install git make python-dev python-pip python3.4 \
+          python3.4-dev postgresql postgresql-contrib python-psycopg2 \
+          python3-psycopg2 libpq-dev mongodb-org emacs25;
 
-      # emacs .init
-      cd /home/vagrant;
+      # Clone development repositories
+      cd /home/ubuntu;
       git clone https://github.com/jk74861372864/.emacs.d.git;
-      rm -rf emacs-24*;
-      sudo chown -R vagrant:vagrant /home/vagrant/.emacs.d;
+      git clone https://github.com/jk74861372864/sync.git;
+      sudo chown -R ubuntu:ubuntu /home/ubuntu/.emacs.d;
+      sudo chown -R ubuntu:ubuntu /home/ubuntu/sync;
+
+      # Install python build dependencies
+      sudo pip install virtualenv tox;
     EOF
   end
 end
