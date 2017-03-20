@@ -208,7 +208,8 @@ network_get = {
         "id",
         "fetch_before_send",
         "schema"
-    ]
+    ],
+    "additionalProperties": False
 }
 
 network_update = {
@@ -287,7 +288,8 @@ node_get = {
         "read",
         "update",
         "delete"
-    ]
+    ],
+    "additionalProperties": False
 }
 
 nodes_get = {
@@ -322,7 +324,8 @@ nodes_get = {
             "read",
             "update",
             "delete"
-        ]
+        ],
+        "additionalProperties": False
     }
 }
 
@@ -380,48 +383,55 @@ message_create = {
 }
 
 message_get = {
-  "$schema": "http://json-schema.org/draft-04/schema#message_get",
-  "type": "object",
-  "properties": {
-    "origin_id": {
-      "type": ["string", "null"]
+    "$schema": "http://json-schema.org/draft-04/schema#message_get",
+    "type": "object",
+    "properties": {
+        "origin_id": {
+            "type": ["string", "null"]
+        },
+        "remote_id": {
+            "type": ["string", "null"]
+        },
+        "id": {
+            "type": "string"
+        },
+        "parent_id": {
+            "type": ["string", "null"]
+        },
+        "state": {
+            "type": "string"
+        },
+        "destination_id": {
+            "type": ["string", "null"]
+        },
+        "record_id": {
+            "type": "string"
+        },
+        "payload": {
+            "type": "object"
+        },
+        "method": {
+            "type": "string"
+        },
+        # Do not specify a type for timestamp as it will fail when
+        # using jsonschema and Python datetimes. We do not want to
+        # string encode timestamps immediately to make use of Postgres
+        # and Mongo date storage.
+        "timestamp": { },
     },
-    "remote_id": {
-      "type": ["string", "null"]
-    },
-    "id": {
-      "type": "string"
-    },
-    "parent_id": {
-      "type": ["string", "null"]
-    },
-    "state": {
-      "type": "string"
-    },
-    "destination_id": {
-      "type": ["string", "null"]
-    },
-    "record_id": {
-      "type": "string"
-    },
-    "payload": {
-      "type": "object"
-    },
-    "method": {
-      "type": "string"
-    }
-  },
-  "required": [
-    "origin_id",
-    "remote_id",
-    "id",
-    "parent_id",
-    "state",
-    "destination_id",
-    "record_id",
-    "payload",
-    "method"
-  ]
+    "required": [
+        "origin_id",
+        "remote_id",
+        "id",
+        "parent_id",
+        "state",
+        "destination_id",
+        "record_id",
+        "payload",
+        "method",
+        "timestamp"
+    ],
+    "additionalProperties": False
 }
 
 message_update = {

@@ -17,7 +17,6 @@ class TestClient():
     def test_client_create_network(self):
         mock_response = {
             'name': 'test',
-            'nodes': [],
             'id': '32ca9377-5ef6-400b-b39b-d9fcdaa51d0d',
             'fetch_before_send': True,
             'schema': {}
@@ -47,7 +46,6 @@ class TestClient():
     def test_client_get_network(self):
         mock_response = {
             'name': 'test',
-            'nodes': [],
             'id': '32ca9377-5ef6-400b-b39b-d9fcdaa51d0d',
             'fetch_before_send': True,
             'schema': {}
@@ -68,7 +66,6 @@ class TestClient():
     def test_client_update_network(self):
         mock_response = {
             'name': 'test',
-            'nodes': [],
             'id': '32ca9377-5ef6-400b-b39b-d9fcdaa51d0d',
             'fetch_before_send': True,
             'schema': {}
