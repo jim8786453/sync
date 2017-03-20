@@ -36,8 +36,8 @@ Vagrant.configure(2) do |config|
 
       # Clone development repositories
       cd /home/ubuntu;
-      git clone https://github.com/jk74861372864/.emacs.d.git;
-      git clone https://github.com/jk74861372864/sync.git;
+      git clone https://github.com/jim8786453/.emacs.d.git;
+      git clone https://github.com/jim8786453/sync.git;
       sudo chown -R ubuntu:ubuntu /home/ubuntu/.emacs.d;
       sudo chown -R ubuntu:ubuntu /home/ubuntu/sync;
 
