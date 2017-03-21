@@ -6,7 +6,8 @@ import sqlalchemy as sqla
 
 from pymongo import MongoClient
 from sqlalchemy.dialects import postgresql
-from sqlalchemy_utils import database_exists, create_database, drop_database
+from sqlalchemy.exc import OperationalError
+from sqlalchemy_utils import create_database, drop_database
 
 import sync
 
@@ -663,13 +664,25 @@ class PostgresStorage(Storage):
         self.base_url = settings.POSTGRES_CONNECTION
         self.engine = sqla.create_engine(self.base_url + self.id)
 
-        if not database_exists(self.engine.url) and not create_db:
-            raise DatabaseNotFoundError()
+        try:
+            self._connect()
+        except OperationalError as e:
+            # sqlalchemy_utils supplies a database_exists() function
+            # but it is much more performant for the common uses of
+            # the API to assume the database exists and catch the
+            # exception where it doesn't. Unfortunately, psycopg2
+            # doesn't supply error codes before the connection has
+            # been established.
+            if 'does not exist' not in str(e):
+                raise
 
-        if not database_exists(self.engine.url):
+            if not create_db:
+                raise DatabaseNotFoundError()
+
             create_database(self.engine.url)
 
-        self._connect()
+            self._connect()
+
         self._setup_schema(create_db)
 
     def disconnect(self):
