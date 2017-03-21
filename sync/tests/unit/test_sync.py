@@ -4,7 +4,7 @@ import mongomock
 import os
 import os.path
 import pytest
-
+import sqlalchemy
 
 from operator import itemgetter
 
@@ -92,6 +92,13 @@ def test_close_none_storage():
     # Closing before init should not raise an error.
     sync.close()
     assert True
+
+
+def test_invalid_postgres_connect():
+    sync.settings.POSTGRES_CONNECTION = 'postgresql://foo:bar@localhost:5432/'
+    postgres_storage = storage.PostgresStorage(sync.generate_id())
+    with pytest.raises(sqlalchemy.exc.OperationalError) as excinfo:
+        postgres_storage.connect()
 
 
 @pytest.mark.noautouse
