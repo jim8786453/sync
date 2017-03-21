@@ -95,7 +95,7 @@ def test_close_none_storage():
 
 
 def test_invalid_postgres_connect():
-    sync.settings.POSTGRES_CONNECTION = 'postgresql://foo:bar@localhost:5432/'
+    sync.settings.POSTGRES_CONNECTION = 'postgresql://foo:bar@localhost:1234/'
     postgres_storage = storage.PostgresStorage(sync.generate_id())
     with pytest.raises(sqlalchemy.exc.OperationalError) as excinfo:
         postgres_storage.connect()
