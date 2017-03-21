@@ -83,6 +83,18 @@ class Node:
             schema.node_get).validate(node)
         resp.body = json.dumps(node, default=utils.json_serial)
 
+    def on_patch(self, req, resp, network_id, node_id):
+        init(network_id)
+        node = sync.Node.get(node_id)
+        utils.obj_or_404(node)
+        json_data = req.stream.read()
+        node = utils.inflate(json_data, node, schema.node_update)
+        node.save()
+        node = node.as_dict(with_id=True)
+        jsonschema.validators.Draft4Validator(
+            schema.node_get).validate(node)
+        resp.body = json.dumps(node, default=utils.json_serial)
+
 
 class NodeSync:
 

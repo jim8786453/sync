@@ -351,10 +351,7 @@ node_update = {
         "delete": {
             "type": "boolean"
         },
-    },
-    "required": [
-        "id",
-    ]
+    }
 }
 
 #

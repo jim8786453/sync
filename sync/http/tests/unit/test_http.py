@@ -196,6 +196,19 @@ class TestHttp():
         result = self.client.simulate_get(url)
         assert result.status_code == 404
 
+        # PATCH 200
+        body = {
+            'name': 'patched',
+            'delete': False
+        }
+        body_json = json.dumps(body)
+        url = '/networks/{0}/nodes/{1}'.format(self.network_id, node_1_id)
+        result = self.client.simulate_patch(url, body=body_json)
+        assert result.status_code == 200
+        assert result.json['name'] == 'patched'
+        assert result.json['delete'] == False
+        assert result.json['create'] == True
+
     def test_http_message_list(self, request):
         self.setup_network()
         self.setup_nodes()
