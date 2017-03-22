@@ -8,7 +8,7 @@ def raise_http_not_found(ex, req, resp, params):
 def raise_http_invalid_request(ex, req, resp, params):
     message = ''
     try:
-        message = ex.message
+        message = str(ex.message)
     except:
         message = str(ex)
     raise falcon.HTTPBadRequest((
