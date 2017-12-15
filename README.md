@@ -34,7 +34,7 @@ To run the full suite of tests from the root project directory:
 To run a Sync server from source use the following command from the root project directory:
 
 ```
-&> make server
+&> make run
 ```
 
 To build the documentation source:
