@@ -75,7 +75,7 @@ def generate_mongo_storage():
     """Return a sync.storage.PostgresStorage object.
 
     """
-    sync.storage.test_mongo_client = mongomock.MongoClient()
+    sync.storage.mongo.test_mongo_client = mongomock.MongoClient()
     mongo_storage = storage.MongoStorage(sync.generate_id())
     mongo_storage.connect(create_db=True)
     return mongo_storage

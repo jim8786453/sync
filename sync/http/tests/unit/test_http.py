@@ -22,7 +22,7 @@ class TestHttp():
         if storage_class == Backend.Postgres:
             sync.settings.POSTGRES_CONNECTION = postgresql.url()
         elif storage_class == Backend.Mongo:
-            sync.storage.test_mongo_client = mongomock.MongoClient()
+            sync.storage.mongo.test_mongo_client = mongomock.MongoClient()
 
     @pytest.fixture(autouse=True)
     def client(self):
