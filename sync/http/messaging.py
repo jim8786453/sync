@@ -41,6 +41,7 @@ class MessageList:
         message = message.as_dict(with_id=True)
         jsonschema.validators.Draft4Validator(
             schema.message_get).validate(message)
+        resp.status = falcon.HTTP_201
         resp.body = json.dumps(message, default=utils.json_serial)
 
 

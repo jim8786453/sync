@@ -105,7 +105,7 @@ class TestHttp():
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 400
 
-        # POST 200
+        # POST 201
         body = {
             'name': 'test',
             'fetch_before_send': True,
@@ -151,7 +151,7 @@ class TestHttp():
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 400
 
-        # POST 200
+        # POST 201
         body = {
             'name': 'node 1',
             'create': True,
@@ -166,7 +166,7 @@ class TestHttp():
         node_1_id = result.json['id']
         assert node_1_id is not None
 
-        # POST 200 for a second node
+        # POST 201 for a second node
         body = {
             'name': 'node 2',
             'create': True,
@@ -213,7 +213,7 @@ class TestHttp():
         self.setup_network()
         self.setup_nodes()
 
-        # POST 200
+        # POST 201
         url = '/messages'
         body = {
             'method': 'create',
@@ -226,15 +226,15 @@ class TestHttp():
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_1_headers)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
-        # POST 200
+        # POST 201
         url = '/messages'
         body['remote_id'] = '2'
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_1_headers)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
     def test_http_message_headers(self, request):
         self.setup_network()
@@ -289,7 +289,7 @@ class TestHttp():
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_1_headers)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
         # Node 2. Check if it has pending messages.
         url = '/messages/pending'
@@ -309,7 +309,7 @@ class TestHttp():
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_1_headers)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
         # Node 2. Check if it has pending messages.
         url = '/messages/pending'
@@ -320,7 +320,7 @@ class TestHttp():
         self.setup_network()
         self.setup_nodes()
 
-        # POST 200
+        # POST 201
         url = '/messages'
         body = {
             'method': 'create',
@@ -333,15 +333,15 @@ class TestHttp():
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_1_headers)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
-        # POST 200
+        # POST 201
         url = '/messages'
         body['remote_id'] = '2'
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_1_headers)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
         # POST 200
         url = '/messages/next'
@@ -360,7 +360,7 @@ class TestHttp():
         result = self.client.simulate_post(url, headers=self.node_2_headers)
         assert result.status_code == 204
 
-        # POST 200
+        # PATCH 200
         url = '/messages/{0}'.format(message_1_id)
         body = {
             'success': True,
@@ -371,7 +371,7 @@ class TestHttp():
                                             headers=self.node_2_headers)
         assert result.status_code == 200
 
-        # POST 200
+        # PATCH 200
         url = '/messages/{0}'.format(message_2_id)
         body = {
             'success': False,
@@ -399,14 +399,14 @@ class TestHttp():
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_1_headers)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
         # Node 1: Update the record using the remote id.
         body['method'] = 'update'
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_1_headers)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
         # Node 1: Ensure the node has no pending messages.
         url = '/messages/next'
@@ -448,7 +448,7 @@ class TestHttp():
         body_json = json.dumps(body)
         result = self.client.simulate_post(url, body=body_json,
                                            headers=self.node_2_headers)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
         # Node 2. Sync the record again.
         url = '/admin/networks/{0}/nodes/{1}/sync'.format(self.network_id,
