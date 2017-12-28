@@ -52,7 +52,7 @@ class TestHttp():
             }
         }
         body_json = json.dumps(body)
-        result = self.client.simulate_post('/networks', body=body_json)
+        result = self.client.simulate_post('/admin/networks', body=body_json)
         self.network_id = str(result.json['id'])
 
     def setup_nodes(self):
@@ -64,7 +64,7 @@ class TestHttp():
             'delete': True
         }
         body_json = json.dumps(body)
-        url = '/networks/{0}/nodes'.format(self.network_id)
+        url = '/admin/networks/{0}/nodes'.format(self.network_id)
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 201
         self.node_1 = result.json
@@ -101,7 +101,7 @@ class TestHttp():
         # POST 400
         body = {}
         body_json = json.dumps(body)
-        url = '/networks'
+        url = '/admin/networks'
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 400
 
@@ -119,12 +119,12 @@ class TestHttp():
         network_id = str(result.json['id'])
 
         # GET 404
-        url = '/networks/foo'
+        url = '/admin/networks/foo'
         result = self.client.simulate_get(url)
         assert result.status_code == 404
 
         # GET 200
-        url = '/networks/{0}'.format(network_id)
+        url = '/admin/networks/{0}'.format(network_id)
         result = self.client.simulate_get(url)
         assert result.status_code == 200
 
@@ -147,7 +147,7 @@ class TestHttp():
             'delete': True
         }
         body_json = json.dumps(body)
-        url = '/networks/{0}/nodes'.format(self.network_id)
+        url = '/admin/networks/{0}/nodes'.format(self.network_id)
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 400
 
@@ -160,7 +160,7 @@ class TestHttp():
             'delete': True
         }
         body_json = json.dumps(body)
-        url = '/networks/{0}/nodes'.format(self.network_id)
+        url = '/admin/networks/{0}/nodes'.format(self.network_id)
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 201
         node_1_id = result.json['id']
@@ -175,24 +175,24 @@ class TestHttp():
             'delete': True
         }
         body_json = json.dumps(body)
-        url = '/networks/{0}/nodes'.format(self.network_id)
+        url = '/admin/networks/{0}/nodes'.format(self.network_id)
         result = self.client.simulate_post(url, body=body_json)
         assert result.status_code == 201
         node_2_id = result.json['id']
         assert node_2_id is not None
 
         # GET 200
-        url = '/networks/{0}/nodes/'.format(self.network_id)
+        url = '/admin/networks/{0}/nodes/'.format(self.network_id)
         result = self.client.simulate_get(url)
         assert result.status_code == 200
 
         # GET 200
-        url = '/networks/{0}/nodes/{1}'.format(self.network_id, node_1_id)
+        url = '/admin/networks/{0}/nodes/{1}'.format(self.network_id, node_1_id)
         result = self.client.simulate_get(url)
         assert result.status_code == 200
 
         # GET 404
-        url = '/networks/{0}/nodes/foo'.format(self.network_id)
+        url = '/admin/networks/{0}/nodes/foo'.format(self.network_id)
         result = self.client.simulate_get(url)
         assert result.status_code == 404
 
@@ -202,7 +202,7 @@ class TestHttp():
             'delete': False
         }
         body_json = json.dumps(body)
-        url = '/networks/{0}/nodes/{1}'.format(self.network_id, node_1_id)
+        url = '/admin/networks/{0}/nodes/{1}'.format(self.network_id, node_1_id)
         result = self.client.simulate_patch(url, body=body_json)
         assert result.status_code == 200
         assert result.json['name'] == 'patched'
@@ -451,7 +451,7 @@ class TestHttp():
         assert result.status_code == 200
 
         # Node 2. Sync the record again.
-        url = '/networks/{0}/nodes/{1}/sync'.format(self.network_id,
+        url = '/admin/networks/{0}/nodes/{1}/sync'.format(self.network_id,
                                                    str(self.node_2['id']))
         result = self.client.simulate_post(url)
         assert result.status_code == 200

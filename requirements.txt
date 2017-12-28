@@ -1,4 +1,5 @@
 falcon==1.1.0
+falcon-cors==1.1.7
 HTTPretty==0.8.14
 jsonschema==2.5.1
 psycopg2==2.7.3

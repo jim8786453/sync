@@ -1,28 +1,31 @@
 import falcon
+from falcon_cors import CORS
 import jsonschema
 
 import sync
 
 from sync.http import admin, errors, middleware, messaging
 
+
 # Middleware.
-api = falcon.API(middleware=[
-    middleware.Sync()])
+cors = CORS(allow_all_origins=True, allow_all_headers=True,
+            allow_all_methods=True)
 
+api = falcon.API(middleware=[cors.middleware])
 
-# Admin API.
-api.add_route('/networks', admin.NetworkList())
-api.add_route('/networks/{network_id}', admin.Network())
-api.add_route('/networks/{network_id}/nodes', admin.NodeList())
-api.add_route('/networks/{network_id}/nodes/{node_id}', admin.Node())
-api.add_route('/networks/{network_id}/nodes/{node_id}/sync', admin.NodeSync())
-
-
-# Message API.
+# Sync API.
 api.add_route('/messages', messaging.MessageList())
 api.add_route('/messages/pending', messaging.MessagePending())
 api.add_route('/messages/next', messaging.MessageNext())
 api.add_route('/messages/{message_id}', messaging.Message())
+
+
+# Admin API.
+api.add_route('/admin/networks', admin.NetworkList())
+api.add_route('/admin/networks/{network_id}', admin.Network())
+api.add_route('/admin/networks/{network_id}/nodes', admin.NodeList())
+api.add_route('/admin/networks/{network_id}/nodes/{node_id}', admin.Node())
+api.add_route('/admin/networks/{network_id}/nodes/{node_id}/sync', admin.NodeSync())
 
 
 # Error handlers.
