@@ -27,6 +27,3 @@ test: ## Run the unit test suite
 
 run: ## Run a test server using Gunicorn
 	. devenv/bin/activate && gunicorn -t 1000 sync.http.server:api --reload
-
-docs: ## Build the api documentation
-	. devenv/bin/activate && sphinx-apidoc -f -o docs/source/ sync
