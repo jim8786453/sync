@@ -616,19 +616,8 @@ class Message(Base):
         assert self.state == State.Processing
 
         s.start_transaction()
-        self.update(State.Failed)
-        if reason:
-            error = Error()
-            error.message_id = self.id
-            error.text = reason
-            error.save()
+        self.update(State.Failed, reason)
         s.commit()
-
-    def errors(self):
-        """Fetch the messages errors using the global sync.Storage object."""
-        if self.id is None:
-            return []
-        return s.get_errors(self.id)
 
     def changes(self):
         """Fetch the messages changes using the global sync.Storage object."""
@@ -746,26 +735,6 @@ class Message(Base):
             s.rollback()
 
             raise
-
-
-class Error(Base):
-    """Tracks errors raised when processing messages."""
-
-    def __init__(self):
-        #: id (str): Unique identifier.
-        self.id = None
-        #: message_id (str): Unique id of the message this error belongs to.
-        self.message_id = None
-        #: timestamp (datetime.datetime): When the error occurred.
-        self.timestamp = generate_datetime()
-        #: text (str): Textual description of the error.
-        self.text = None
-
-    def save(self):
-        """Save the object using the global sync.Storage object."""
-        if self.id is not None:
-            raise exceptions.InvalidOperationError(Text.ErrorInvalid)
-        s.save_error(self)
 
 
 class Change(Base):

@@ -73,9 +73,6 @@ class MockStorage(Storage):
     def save_message(self, message):
         self._save(message, self.messages)
 
-    def save_error(self, error):
-        self._save(error, self.errors)
-
     def save_change(self, change):
         self._save(change, self.changes)
 
@@ -155,13 +152,6 @@ class MockStorage(Storage):
             results[remote.record_id]._remotes.append(remote)
 
         return [results.values()]
-
-    def get_errors(self, message_id):
-        results = []
-        for e in self.errors.values():
-            if message_id == e.message_id:
-                results.append(e)
-        return results
 
     def get_changes(self, message_id):
         results = []

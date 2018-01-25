@@ -139,9 +139,6 @@ class MongoStorage(Storage):
     def save_message(self, message):
         self._save('messages', message)
 
-    def save_error(self, error):
-        self._save('errors', error)
-
     def save_change(self, change):
         self._save('changes', change)
 
@@ -267,12 +264,6 @@ class MongoStorage(Storage):
                 results[remote.record_id]._remotes.append(remote)
 
             yield results.values()
-
-    def get_errors(self, message_id):
-        filter_ = {
-            'message_id': message_id
-        }
-        return self._get_many('errors', filter_, sync.Error)
 
     def get_changes(self, message_id):
         filter_ = {

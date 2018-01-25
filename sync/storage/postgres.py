@@ -173,26 +173,6 @@ class PostgresStorage(Storage):
                 sqla.types.String,
                 nullable=False))
 
-        self.error_table = sqla.Table(
-            "errors", self.metadata,
-            sqla.Column(
-                "id",
-                postgresql.UUID,
-                primary_key=True),
-            sqla.Column(
-                "message_id",
-                postgresql.UUID,
-                sqla.ForeignKey("messages.id"),
-                nullable=False),
-            sqla.Column(
-                "timestamp",
-                sqla.DateTime,
-                nullable=False),
-            sqla.Column(
-                "text",
-                sqla.Text,
-                nullable=True))
-
         self.change_table = sqla.Table(
             "changes", self.metadata,
             sqla.Column(
@@ -312,9 +292,6 @@ class PostgresStorage(Storage):
 
     def save_message(self, message):
         self._save(self.message_table, message)
-
-    def save_error(self, error):
-        self._save(self.error_table, error)
 
     def save_change(self, change):
         self._save(self.change_table, change)
@@ -466,13 +443,6 @@ class PostgresStorage(Storage):
         finally:
             if connection is not None:
                 connection.close()
-
-    def get_errors(self, message_id):
-        table = self.error_table
-        query = table.select()
-        query = query.where(table.c.message_id == message_id)
-
-        return self._get_many(query, sync.Error)
 
     def get_changes(self, message_id):
         table = self.change_table

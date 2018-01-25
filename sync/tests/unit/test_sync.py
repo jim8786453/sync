@@ -197,23 +197,6 @@ class TestSync():
         returned = sync.Message.get(message.id)
         assert message == returned
 
-    def test_error(self):
-        message = sync.Message()
-        message.method = sync.Method.Create
-        message.save()
-
-        error = sync.Error()
-        error.message_id = message.id
-        error.text = "Message"
-        error.save()
-        returned = message.errors()
-
-        assert len(returned) == 1
-        assert returned[0] == error
-
-        with pytest.raises(Exception):
-            error.save()
-
     def test_change(self):
         message = sync.Message()
         message.method = sync.Method.Create
@@ -800,8 +783,8 @@ class TestSync():
         message.update(sync.State.Processing)
         message.fail("reason")
         assert message.state == sync.State.Failed
-        assert len(message.errors()) == 1
-        assert message.errors()[0].text == "reason"
+        changes = message.changes()
+        assert changes[-1].note == "reason"
 
     def test_message_send(self):
         node_1 = sync.Node.create()
@@ -1019,7 +1002,6 @@ class TestSync():
 
     def test_message_get_history_empty(self):
         message = sync.Message()
-        assert [] == message.errors()
         assert [] == message.changes()
 
     def test_message_send_raise_errors(self):
@@ -1072,8 +1054,6 @@ class TestBaseStorage():
         with pytest.raises(NotImplementedError):
             storage.save_message(None)
         with pytest.raises(NotImplementedError):
-            storage.save_error(None)
-        with pytest.raises(NotImplementedError):
             storage.save_change(None)
         with pytest.raises(NotImplementedError):
             storage.save_record(None)
@@ -1095,8 +1075,6 @@ class TestBaseStorage():
             storage.get_nodes()
         with pytest.raises(NotImplementedError):
             storage.get_records()
-        with pytest.raises(NotImplementedError):
-            storage.get_errors(None)
         with pytest.raises(NotImplementedError):
             storage.get_changes(None)
         with pytest.raises(NotImplementedError):
