@@ -4,8 +4,6 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/jim8786453/sync/badge.svg?branch=master)](https://coveralls.io/github/jim8786453/sync?branch=master)
 
-[![Documentation Status](https://readthedocs.org/projects/py-sync/badge/?version=latest)](http://py-sync.readthedocs.io/en/latest/?badge=latest)
-
 **Currently Sync is work in progress and is not ready for production use.**
 
 Designed to simplify the process of keeping data sychronised between multiple clients. It provides an API to perform create, update or delete operations that will be synchronised to other clients, as well as keep up to date with changes they make.
